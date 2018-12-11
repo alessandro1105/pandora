@@ -1,0 +1,25 @@
+{
+  "name": "padora",
+  "version": "1.0.0",
+  "description": "Pandora it's a new super cloud hosting",
+  "scripts": {
+    "build": "docker-compose build",
+    "start": "docker-compose up -d & gulp",
+    "stop": "docker-compose down"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alessandro1105/padora.git"
+  },
+  "author": "Alessandro Pasqualini <alessandro.pasqualini.1105@gmail.com> (https://github.com/alessandro1105)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/alessandro1105/padora/issues"
+  },
+  "homepage": "https://github.com/alessandro1105/padora#readme",
+  "devDependencies": {
+    "gulp": "^4.0.0",
+    "gulp-clean": "^0.4.0",
+    "run-sequence": "^2.2.1"
+  }
+}
