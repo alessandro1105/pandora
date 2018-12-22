@@ -1,0 +1,139 @@
+version: '3'
+
+services:
+
+  # Reverse Proxy
+  # ----------------
+  rproxy:
+    image: pandora-rproxy:latest
+    build:
+      context: ./rproxy/
+    networks:
+      - rproxy-webapp-net
+      - rproxy-backend-net
+    ports:
+      - "80:80"
+  # ----------------
+
+  # Webapp
+  # ----------------
+  webapp:
+    image: pandora-webapp:latest
+    build:
+      context: ./webapp/
+    volumes:
+      - "./webapp/build/:/usr/share/nginx/html:ro"
+    networks:
+      - rproxy-webapp-net
+  # ----------------
+
+  # Backend service
+  # ----------------
+  backend-api: # Backend API Gateway
+    image: pandora-backend-api:latest
+    build:
+      context: ./backend/backend-api/
+    volumes:
+      - "./backend/backend-api/build/:/var/www/html/"
+    networks:
+      - backend-user-net
+      - backend-storage-net
+      - rproxy-backend-net
+    ports:
+      - "8081:80" # Debug port to bypass entire infrastructure and access directly to the container
+  # ----------------
+
+  # User service
+  # ----------------
+  user-api: # User API
+    image: pandora-user-api:latest
+    build:
+      context: ./user/user-api/
+    volumes:
+      - "./user/user-api/build/:/var/www/html/"
+    networks:
+      - user-net
+      - backend-user-net
+    ports:
+      - "8082:80" # Debug port to bypass entire infrastructure and access directly to the container
+
+  user-db: # User DB
+    image: pandora-user-db:latest
+    build:
+      context: ./user/user-db/
+    environment:
+      POSTGRES_PASSWORD: pandora1
+    volumes:
+      - "./.tmp/user/user-db/:/var/lib/postgresql/data/"
+    networks:
+      - user-net
+  # ----------------
+
+  # Storage service
+  # ----------------
+  storage-api: # User API
+    image: pandora-storage-api:latest
+    build:
+      context: ./storage/storage-api/
+    volumes:
+      - "./storage/storage-api/build/:/var/www/html/"
+    networks:
+      - storage-net
+      - storage-persistent-net
+      - backend-storage-net
+    ports:
+      - "8083:80" # Debug port to bypass entire infrastructure and access directly to the container
+
+  storage-db: # Storage DB
+    image: pandora-storage-db:latest
+    build:
+      context: ./storage/storage-db/
+    environment:
+      POSTGRES_PASSWORD: pandora1
+    volumes:
+      - "./.tmp/storage/storage-db/:/var/lib/postgresql/data/"
+    networks:
+      - storage-net
+  # ----------------
+
+  # Persistent service
+  # ----------------
+  persistent-api: # Persistent API
+    image: pandora-persistent-api:latest
+    build:
+      context: ./persistent/persistent-api/
+    volumes:
+      - "./persistent/persistent-api/build/:/var/www/html/"
+      - "./.tmp/persistent/persistent-api/:/persistent"
+    networks:
+      - storage-persistent-net
+    ports:
+      - "8084:80" # Debug port to bypass entire infrastructure and access directly to the container
+  # ----------------
+
+  # Debug container
+  # ----------------
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: info@pandora.test
+      PGADMIN_DEFAULT_PASSWORD: pandora1
+    volumes:
+      - "./.tmp/pgadmin_data:/var/lib/pgadmin"
+    networks:
+      - user-net
+      - storage-net
+    ports:
+      - "8080:80"
+  # ----------------
+
+
+# Networks definitions
+networks:
+  rproxy-webapp-net: # Network connecting rproxy and webapp
+  rproxy-backend-net: # Network connecting rproxy and backend service
+  backend-user-net: # Network connecting backend service and user service
+  backend-storage-net: # Network connecting backend service and storage service
+  storage-persistent-net: # Network connecting storage service and persistent service
+  user-net: # User service internal network
+  storage-net: # Storage service internal network
