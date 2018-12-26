@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Pandora it's a new super cloud hosting",
   "scripts": {
-    "build": "docker-compose build",
+    "build": "gulp build-dev & docker-compose build",
     "start": "docker-compose up -d & gulp",
     "stop": "docker-compose down"
   },
@@ -18,8 +18,11 @@
   },
   "homepage": "https://github.com/alessandro1105/padora#readme",
   "devDependencies": {
+    "del": "^3.0.0",
     "gulp": "^4.0.0",
     "gulp-clean": "^0.4.0",
-    "run-sequence": "^2.2.1"
+    "gulp-hub": "^4.2.0",
+    "gulp-plumber": "^1.2.1",
+    "path": "^0.12.7"
   }
 }
