@@ -1,0 +1,21 @@
+<div class="container-scroller">
+    <!-- Header -->
+    <nav class="navbar default-layout col-lg-12 col-12 p-0 fixed-top d-flex flex-row" ng-include="'app/components/page/header/header.tpl.html'"></nav>
+
+    <!-- Content -->
+    <div class="container-fluid page-body-wrapper">
+        <!-- Sidebar -->
+        <nav class="sidebar sidebar-offcanvas" id="sidebar" ng-include="'app/components/page/sidebar/sidebar.tpl.html'"></nav>
+        
+        <!-- Main Content -->
+        <div class="main-panel">
+
+            <!-- Page Content -->
+            <ui-view></ui-view>
+
+            <!-- Footer -->
+            <footer class="footer" ng-include="'app/components/page/footer/footer.tpl.html'"></footer>
+
+        </div>
+    </div>
+</div>
