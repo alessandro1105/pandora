@@ -16,9 +16,10 @@ angular
         $stateProvider
             .state({
                 name: 'page',
-                templateUrl: 'app/components/page/page.tpl.html'
+                templateUrl: 'app/components/page/page.tpl.html',
+                abstract: true
             });
-
+            
     });
 
 
