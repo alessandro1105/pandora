@@ -125,3 +125,7 @@
 
 @import "landing-screens/auth";
 @import "landing-screens/error";
+
+/* === Page specific styles === */
+@import "pages/login";
+@import "pages/signup";
