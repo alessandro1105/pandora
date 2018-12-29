@@ -136,7 +136,11 @@ task('watch-dev', function (cb) {
 			deleteFile(filename, PATH.SRC, PATH.BUILD)
 		});
 
-	// Watch Angular venndors files
+	// Watch scss files
+	watch(PATH.SRC + '/assets/scss/**/*.scss')
+		.on('all', css);
+
+	// Watch Angular vendors files
 	watch(PATH.SRC + '/vendors/angular/*')
 		.on('add', angular)
 		.on('change', angular)
