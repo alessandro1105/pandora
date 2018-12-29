@@ -4,7 +4,8 @@ angular
 
         'page', // Page Module
         'homepage', // Homepage Module
-        'error404' // Error 404 Module
+        'error404', // Error 404 Module
+        'user' // User Module
     ])
 
     .config(function ($urlRouterProvider, $locationProvider, $urlMatcherFactoryProvider) {
