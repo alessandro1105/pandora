@@ -26,7 +26,7 @@ var hub = new HubRegistry([
 	'./persistent/persistent-api/gulpfile.js',
 	'./storage/storage-api/gulpfile.js',
 	'./user/user-api/gulpfile.js',
-	//'./webapp/gulpfile.js'
+	'./webapp/gulpfile.js'
 ]);
 
 // Register custom registry

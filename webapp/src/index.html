@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="pandora">
+
+<head>
+    <base href="/">
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Pandora</title>
+
+    <!-- App CSS & Vendors CSS-->
+    <link rel="stylesheet" href="vendors/css/materialdesignicons.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+
+    <!-- AngulaJS & Modules -->
+    <script src="vendors/js/angular.js"></script>
+    <script src="vendors/js/angular-ui-router.min.js"></script>
+    <!-- <script src="vendors/js/angular-resource.min.js"></script> -->
+    <script src="vendors/js/ui-bootstrap-tpls-3.0.6.min.js"></script>
+
+    <!-- App -->
+    <script src="app/app.module.js"></script>
+
+    <!-- Page Module -->
+    <script src="app/components/page/page.module.js"></script>
+
+    <!-- Listing Module -->
+    <script src="app/components/listing/listing.module.js"></script>
+
+    <!-- Error 404 Module -->
+    <script src="app/components/error404/error404.module.js"></script>
+
+    <!-- User Module -->
+    <script src="app/components/user/user.module.js"></script>
+    <!-- Login Sub Module -->
+    <script src="app/components/user/login/login.module.js"></script>
+    <!-- Signup Sub Module -->
+    <script src="app/components/user/signup/signup.module.js"></script>
+
+
+    <!-- Favicon -->
+    <link rel="shortcut icon" href="assets/images/favicon.png" />
+</head>
+
+<body>
+    <ui-view></ui-view>
+</body>
+
+</html>
