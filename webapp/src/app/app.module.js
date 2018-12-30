@@ -1,9 +1,10 @@
 angular
     .module('pandora', [
         'ui.router', // UI Router
+        'ui.bootstrap', // UI Bootstrap
 
         'page', // Page Module
-        'homepage', // Homepage Module
+        'listing', // Homepage Module
         'error404', // Error 404 Module
         'user' // User Module
     ])

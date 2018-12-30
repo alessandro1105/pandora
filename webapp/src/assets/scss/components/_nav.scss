@@ -61,11 +61,11 @@
         font-size: 0.9rem;
         margin-top: 0;
         position: absolute;
-        top: calc(#{$navbar-height} - 6px);
+        //top: calc(#{$navbar-height} - 6px);
         right: 0;
         left: auto;
         border: 1px solid rgba(182, 182, 182, 0.1);
-        padding: 0 0 20px;
+        //padding: 0 0 20px;
         min-width: 100%;
         @include border-radius(6px);
         @extend .dropdownAnimation;

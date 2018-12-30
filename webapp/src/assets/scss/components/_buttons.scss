@@ -109,6 +109,16 @@
       border-color: lighten($black, 85%);
     }
   }
+
+  &.btn-transparent {  
+    &:hover {
+      border: 1px solid black;
+    }
+
+    i {
+      margin-right: 0;
+    }
+  }
 }
 
 .btn-group {

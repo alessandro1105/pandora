@@ -66,4 +66,13 @@
       }
     }
   }
+
+  &.table-hover {
+    tbody tr:hover {
+      .btn-transparent {
+        border: 1px solid grey;
+      }
+    }
+  }
 }
+

@@ -1,6 +1,6 @@
 // Page module
 angular
-    .module('homepage', [
+    .module('listing', [
 
     ])
 
@@ -15,10 +15,10 @@ angular
         // Sidebar container state (Used only to place the sidebar container tpl on the page)
         $stateProvider
             .state({
-                name: 'homepage',
+                name: 'listing',
                 url: '/',
                 parent: 'page',
-                templateUrl: 'app/components/homepage/homepage.tpl.html'
+                templateUrl: 'app/components/listing/listing.tpl.html'
             });
 
     });
