@@ -22,11 +22,11 @@ task('clean-tmp', function () {
 
 // Create hub
 var hub = new HubRegistry([
-	'./backend/backend-api/gulpfile.js',
+	//'./backend/backend-api/gulpfile.js',
 	'./persistent/persistent-api/gulpfile.js',
 	'./storage/storage-api/gulpfile.js',
-	'./user/user-api/gulpfile.js',
-	'./webapp/gulpfile.js'
+	//'./user/user-api/gulpfile.js',
+	//'./webapp/gulpfile.js'
 ]);
 
 // Register custom registry

@@ -4,69 +4,69 @@ services:
 
   # Reverse Proxy
   # ----------------
-  rproxy:
-    image: pandora-rproxy:latest
-    build:
-      context: ./rproxy/
-    networks:
-      - rproxy-webapp-net
-      - rproxy-backend-net
-    ports:
-      - "80:80"
+  # rproxy:
+  #   image: pandora-rproxy:latest
+  #   build:
+  #     context: ./rproxy/
+  #   networks:
+  #     - rproxy-webapp-net
+  #     - rproxy-backend-net
+  #   ports:
+  #     - "80:80"
   # ----------------
 
   # Webapp
   # ----------------
-  webapp:
-    image: pandora-webapp:latest
-    build:
-      context: ./webapp/
-    volumes:
-      - "./webapp/build/:/usr/share/nginx/html:ro"
-    networks:
-      - rproxy-webapp-net
+  # webapp:
+  #   image: pandora-webapp:latest
+  #   build:
+  #     context: ./webapp/
+  #   volumes:
+  #     - "./webapp/build/:/usr/share/nginx/html:ro"
+  #   networks:
+  #     - rproxy-webapp-net
   # ----------------
 
   # Backend service
   # ----------------
-  backend-api: # Backend API Gateway
-    image: pandora-backend-api:latest
-    build:
-      context: ./backend/backend-api/
-    volumes:
-      - "./backend/backend-api/build/:/var/www/html/"
-    networks:
-      - backend-user-net
-      - backend-storage-net
-      - rproxy-backend-net
-    ports:
-      - "8081:80" # Debug port to bypass entire infrastructure and access directly to the container
+  # backend-api: # Backend API Gateway
+  #   image: pandora-backend-api:latest
+  #   build:
+  #     context: ./backend/backend-api/
+  #   volumes:
+  #     - "./backend/backend-api/build/:/var/www/html/"
+  #   networks:
+  #     - backend-user-net
+  #     - backend-storage-net
+  #     - rproxy-backend-net
+  #   ports:
+  #     - "8081:80" # Debug port to bypass entire infrastructure and access directly to the container
   # ----------------
 
   # User service
   # ----------------
-  user-api: # User API
-    image: pandora-user-api:latest
-    build:
-      context: ./user/user-api/
-    volumes:
-      - "./user/user-api/build/:/var/www/html/"
-    networks:
-      - user-net
-      - backend-user-net
-    ports:
-      - "8082:80" # Debug port to bypass entire infrastructure and access directly to the container
+  # user-api: # User API
+  #   image: pandora-user-api:latest
+  #   build:
+  #     context: ./user/user-api/
+  #   volumes:
+  #     - "./user/user-api/build/:/var/www/html/"
+  #   networks:
+  #     - user-net
+  #     - backend-user-net
+  #   ports:
+  #     - "8082:80" # Debug port to bypass entire infrastructure and access directly to the container
 
-  user-db: # User DB
-    image: pandora-user-db:latest
-    build:
-      context: ./user/user-db/
-    environment:
-      POSTGRES_PASSWORD: pandora1
-    volumes:
-      - "./.tmp/user/user-db/:/var/lib/postgresql/data/"
-    networks:
-      - user-net
+  # user-db: # User DB
+  #   image: pandora-user-db:latest
+  #   build:
+  #     context: ./user/user-db/
+  #   environment:
+  #     POSTGRES_PASSWORD: pandora1
+  #   volumes:
+  #     - "./.tmp/user/user-db/:/var/lib/postgresql/data/"
+  #   networks:
+  #     - user-net
   # ----------------
 
   # Storage service

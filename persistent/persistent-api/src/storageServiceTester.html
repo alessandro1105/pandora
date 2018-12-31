@@ -1,0 +1,33 @@
+<!--Just for test the three modules-->
+
+<!DOCTYPE html>
+<html>
+<head>
+</head>
+<body>
+
+<!--il nome "fileToUpload" sarà visibile da $_FILES nel file php
+il nome "upsubmit" sarà visibile da $_POST nel file php, come tutto il resto eccetto il file.-->
+<form method="POST" enctype="multipart/form-data" action="http://localhost:8084/uploader.php">
+    <input type="file" name="fileToUpload"  onclick="loadList()">
+    <input type="submit" name="upsubmit" value="Upload!">
+</form>
+
+<br/>
+
+<form method="GET" action="http://localhost:8084/downloader.php">
+    <input name="fileToDownload" type="text">
+    <datalist id="fl">
+    </datalist>
+    <input type="submit" name="downsubmit" value="Download!">
+</form>
+
+<br/>
+
+<form method="POST" enctype="multipart/form-data" action="http://localhost:8084/deleter.php">
+    <input type="text" name="fileToDelete">
+    <input type="submit" name="delsubmit" value="Delete!">
+</form>
+
+</body>
+</html>
