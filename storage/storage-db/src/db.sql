@@ -1,34 +1,58 @@
+-- =============== EXTENSIONS ===============
+
+-- uuid-ossp (UUID generation functions)
+CREATE EXTENSION
+    IF NOT EXISTS "uuid-ossp";
+
+    -- =============== CUSTOM DOMAINS ===============
+
+    -- FILENAME_TYPE
+    -- Cannot check whether a filename contains / (the root has it) so only the nonEmpty check is kept.
+    -- The php modules has the / check for a non root file
+    CREATE DOMAIN FILENAME_TYPE AS VARCHAR(255)
+        CHECK (value ~ '/.+/');
+
+-- =============== TABLES ===============
+
+
+
+
 --tables in the storage db
+
+--default generator in uuid useful when creating a new directory
 CREATE TABLE file (
 
-    uuid varchar(36) NOT NULL,
-    file_name varchar(50) NOT NULL,
-    user_uuid varchar(36) NOT NULL,
-    is_dir tinyint(1) NOT NULL,
-    creation_time datetime,
+    uuid UUID NOT NULL,
+    file_name FILENAME_TYPE NOT NULL,
+    user_uuid UUID NOT NULL,
+    is_dir BOOLEAN NOT NULL DEFAULT FALSE,
+    creation_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+
     PRIMARY KEY (uuid)
 
 );
 
 CREATE TABLE version (
 
-    uuid varchar(36) NOT NULL,
+    uuid UUID NOT NULL,
     version_number INT NOT NULL AUTO_INCREMENT,
-    creation_time datetime,
-    file_size int,
-    uuid_file varchar(36) NOT NULL,
+    creation_time  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    file_size INT UNSIGNED NOT NULL,
+    uuid_file UUID NOT NULL,
+
     PRIMARY KEY (uuid),
     FOREIGN KEY (uuid_file) REFERENCES file(uuid)
 
 );
 
+--default null in uuid_parent useful when creating a root for a user
 CREATE TABLE has_parent (
 
-    uuid_child varchar(36) NOT NULL,
-    uuid_parent VARCHAR(36),
+    uuid_child UUID NOT NULL,
+    uuid_parent UUID DEFAULT NULL,
+
     PRIMARY KEY (uuid_child),
     FOREIGN KEY (uuid_child) REFERENCES file(uuid),
     FOREIGN KEY (uuid_parent) REFERENCES file(uuid)
 
 );
---possible additional constraint needed: uuid_parent is null if and only if uuid_child correspond to a root directory
