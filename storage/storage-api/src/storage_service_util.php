@@ -32,13 +32,54 @@ function uuid_v4()
     );
 }
 
+/*
+* Utility to separate the path into two pieces: (the path -1 element) and (the element)
+* It also do additional checks like pathify and is_file_name
+*/
+function divide_path_from_last($path)
+{
+
+    $path = pathify($path);
+
+    if(strlen($path) == 0 )
+        throw new IllegalDataException(); //divide an empty path into more pieces is a mischievious action that will be punished
+
+
+    //The last directory in the file is the one I need
+
+    $arrpath = explode('/', pathify($path) );
+
+    if(count($arrpath) == 1) //only one element that for previous check is not the empty string
+        return ['', $arrpath[0]]; //this element is in the root directory
+
+    //let's put in strpath the path excluding the last element
+    $strpath='/'; //so that is not empty and I can use pathify even if no other directories are added
+    for($i=0; $i<=count($arrpath)-2; $i++) //not executed if the array has only one element
+        $strpath=$strpath.$arrpath[$i].'/';
+
+
+    $strpath = pathify($strpath); //let's trash the final and initial / ... it may return the empty string, it's fine (the last_el is in root)
+
+
+    $last_el = $arrpath[count($arrpath)-1]; //the last element, a.k.a. a dirname or a filename
+
+
+    if(!is_file_name($last_el))
+        throw new IllegalDataException();
+
+    return [$strpath, $last_el];
+
+}
 
 //throw exceptions if path is empty or contain // character (which means a directory name is empty string, that is illegal)
 //usefully transform /etc/div/ into etc/div
 //if the input is / it will return an empty string, but it cannot receive as input an empty string
+
+//---ALL THE COMMENTS BELOW OVERRIDE SOME ASPECTS FROM ABOVE:
+//NEW FEATURE: it won't throw anymore an exception if an empty string is passed, it will be consider as a root. So now pathify is idempotent
 function pathify($pathToBe)
 {
-    if( (strlen($pathToBe) == 0) OR preg_match('/\/\//',$pathToBe) )
+    if( preg_match('/\/\//',$pathToBe) )
         throw new IllegalDataException();
 
     if( (substr($path, 0, 1) == '/') ) //let"s trash the initial / symbol if it"s present
@@ -134,13 +175,15 @@ function do_fetchAll($conn, $sql)
         {
             throw new DataNotFoundException("Could not get data: " . mysql_error());
         }
+
+        return $result;
     }
     catch(PDOException $e)
     {
         throw new DataNotFoundException("Error from pdo: ". $e->getMessage();)
     }
 
-    return json_encode($result); //i"m expecting only one uuid
+
 }
 
 
@@ -217,7 +260,7 @@ function list($conn, $user, $path)
         ."ON F.uuid = H.uuid_child "
         ."WHERE H.uuid_parent = '".$parent_uuid."';";
 
-    return do_fetchAll($conn, $sql);
+    return json_encode(do_fetchAll($conn, $sql));
 
 }
 
@@ -238,6 +281,9 @@ function get_last_element_uuid($conn, $user, $path)
         foreach($parts as $t)
         {
             $parent_uuid = get_child_uuid($conn, $parent_uuid, $t);
+
+            if( $parent_uuid == 'notfound')
+                return 'notfound';
         }
 
         $last_element = $parent_uuid; //just for clarity..
@@ -274,46 +320,87 @@ function get_child_uuid($conn, $parent_uuid, $fname)
     return do_fetch($conn, $sql, "uuid");
 }
 
+function get_children_uuid($conn, $parent_uuid)
+{
+    if(!get_if_is_dir($conn, $parent_uuid))
+        throw new IllegalDataException();
 
+    $sql="SELECT IFNULL (( SELECT F.uuid "
+        ."FROM file AS F INNER JOIN has_parent AS H "
+        ."ON F.uuid = H.uuid_child "
+        ."WHERE H.uuid_parent = '".$parent_uuid."' ), 'nochildren');";
+
+    return do_fetchAll($conn, $sql);
+}
+
+
+function get_all_versions_uuid($conn, $myfile_uuid)
+{
+    $sql =  . "SELECT uuid "
+            . "FROM version "
+            . "WHERE uuid_file = '".$myfile_uuid."'  ;";
+
+    return do_fetchAll($conn, $sql);
+
+}
 
 function get_highest_version_uuid($conn, $myfile_uuid)
 {
-    $sql = "SELECT V.uuid "
-         . "FROM version AS V INNER JOIN file AS F "
-         . "ON F.uuid = V.uuid_file "
-         . "WHERE F.uuid = '".$myfile_uuid."' AND V.version_number = ( "
+    $sql = "SELECT uuid "
+         . "FROM version "
+         . "WHERE uuid_file = '".$myfile_uuid."' AND version_number = ( "
          . "SELECT MAX(V2.version_number) "
          . "FROM version AS V2 "
          . "WHERE V2.uuid_file = '".$myfile_uuid."' "
          . ");";
 
-    $uuid_for_persistent = do_fetch($conn, $sql, "uuid");
+    return do_fetch($conn, $sql, "uuid");
 }
 
 function get_lowest_version_uuid($conn, $myfile_uuid)
 {
-    $sql = "SELECT V.uuid "
-         . "FROM version AS V INNER JOIN file AS F "
-         . "ON F.uuid = V.uuid_file "
-         . "WHERE F.uuid = '".$myfile_uuid."' AND V.version_number = ( "
+    $sql = "SELECT uuid "
+         . "FROM version "
+         . "WHERE uuid_file = '".$myfile_uuid."' AND version_number = ( "
          . "SELECT MIN(V2.version_number) "
          . "FROM version AS V2 "
          . "WHERE V2.uuid_file = '".$myfile_uuid."' "
          . ");";
 
-    $uuid_for_persistent = do_fetch($conn, $sql, "uuid");
+    return do_fetch($conn, $sql, "uuid");
 }
 
 function get_number_of_versions_present($conn, $myfile_uuid)
 {
     $sql = "SELECT COUNT(*) FROM ( "
-         . "SELECT V.uuid "
-         . "FROM version AS V INNER JOIN file AS F "
-         . "ON F.uuid = V.uuid_file "
-         . "WHERE F.uuid = '".$myfile_uuid."' ) "
+         . "SELECT uuid "
+         . "FROM version "
+         . "WHERE uuid_file = '".$myfile_uuid."' ) "
          . ") tableAlias ;";
 
-    $uuid_for_persistent = do_fetch($conn, $sql, 'COUNT(*)');
+    return do_fetch($conn, $sql, 'COUNT(*)');
+}
+
+function get_this_version_uuid($conn, $version, $myfile_uuid)
+{
+    $sql = "SELECT uuid "
+         . "FROM version "
+         . "WHERE uuid_file = '".$myfile_uuid."' AND version_number = '".$version."';"
+
+    return do_fetch($conn, $sql, "uuid");
+}
+
+/*
+* this function receives as input a filename
+* returns if it is a directory (true) or a file (false)
+*/
+function get_if_is_dir($conn, $myfile_uuid)
+{
+    $sql = "SELECT is_dir "
+            . "FROM file "
+            . "WHERE uuid = '".$myfile_uuid."' ;"
+
+    return do_fetch($conn, $sql, "is_dir");
 }
 
 
@@ -333,12 +420,7 @@ function file_download($conn, $user, $path, $fileName, $version)
     }
     else
     {
-        $sql = "SELECT V.uuid "
-             . "FROM version AS V INNER JOIN file AS F "
-             . "ON F.uuid = V.uuid_file "
-             . "WHERE F.uuid = '".$myfile_uuid."' AND V.version_number = '".$version."';"
-
-        $uuid_for_persistent = do_fetch($conn, $sql, "uuid");
+        $uuid_for_persistent = get_this_version_uuid($conn, $version, $myfile_uuid);
 
         return download_from_persistent($uuid_for_persistent);
 
@@ -454,6 +536,7 @@ function make_dir($conn, $user, $path, $dir_name)
 
     $my_dir_uuid = uuid_v4();
 
+
     do_ins_in_file($conn, $parent_uuid, [$my_dir_uuid, $dir_name, $user, TRUE]); //an exception can be thrown if a file with same name is already present in parent
     do_ins($conn, 'has_parent', [$my_dir_uuid, $parent_uuid]);
 
@@ -493,10 +576,9 @@ function file_upload($conn, $user, $path, $myfile)
         {
             $lowest_version_uuid = get_lowest_version_uuid($conn, $myfile_uuid);
 
-            remove_from_persistent($lowest_version_uuid);
-
             do_del($conn, 'version', $lowest_version_uuid);
 
+            remove_from_persistent($lowest_version_uuid); //if it fails, no data is kept in the storage-db, so the user cannot reach it and have more than 10 versions
         }
 
         do_ins($conn, 'version', [$my_file_version_uuid, $myfile["size"], $myfile_uuid]);
@@ -514,6 +596,158 @@ function file_upload($conn, $user, $path, $myfile)
 
 
 }
+
+
+function move_element($conn, $user, $path, $name, $newpath, $newname)
+{
+    if(($name==$newname) AND ($path==$newpath))
+        return; //no business here to be done...
+
+
+
+    //maybe all these controls are too much....
+    if(!is_file_name($name) OR !is_file_name($newname))
+        throw new IllegalDataException();
+
+    if(!is_uuid($user))
+        throw new IllegalDataException();
+
+    $path = pathify($path);
+    $newpath = pathify($newpath);
+    //-------
+
+
+
+
+    //uuid of the file to be renamed and/or moved
+    $myfile_uuid = get_last_element_uuid($conn, $user, $path.'/'.$name);
+
+    //first of all, check whether an element with the same name already exists in the new path or the element to move doesn't exist
+    if( ( get_last_element_uuid($conn, $user, $newpath.'/'.$newname) != 'notfound' ) OR ($myfile_uuid == 'notfound') )
+        throw new IllegalDataException();
+
+    try
+    {
+        $conn->beginTransaction();
+
+        //renaming is required
+        if($name!=$newname)
+        {
+            $conn->exec("UPDATE file SET file_name = '".$newname."' WHERE uuid = '".$myfile_uuid."';");
+        }
+
+        //moving is required
+        if($path!=$newpath)
+        {
+            //getting the uuid of the future parent
+            $future_parent_uuid = get_last_element_uuid($conn, $user, $newpath);
+
+            $conn->exec("UPDATE has_parent SET uuid_parent = '".$future_parent_uuid."' WHERE uuid_child = '".$myfile_uuid."';");
+        }
+        $conn->commit();
+
+    }
+    catch(PDOException $e)
+    {
+        $conn->rollBack();
+        throw new DbException($e->getMessage());
+    }
+
+}
+
+
+/*
+* unix-like approach: renaming the element is just moving it in the same directory he's in with a different name
+*/
+function rename_element($conn, $user, $path, $name, $newname)
+{
+    return move_element($conn, $user, $path, $name, $path, $newname);
+}
+
+
+
+
+//it doesn't contain the beginTransaction and the commit, so it's more versatile
+//0 is interpreted as maximum version number
+function remove_version($conn, $file_uuid, int $version_number, &$stack)
+{
+    $v_uuid;
+
+    if($version_number===0)
+    {
+        $v_uuid = get_highest_version_uuid($conn, $file_uuid);
+        $conn->exec("DELETE FROM version WHERE uuid = '".$v_uuid."';");
+
+    }
+    else
+    {
+        $v_uuid = get_this_version_uuid($conn, $version_number, $file_uuid);
+        $conn->exec("DELETE FROM version WHERE uuid = '".$v_uuid."';");
+    }
+
+    array_push($stack, $v_uuid);
+}
+
+function remove_all_version_($conn, $file_uuid)
+{
+    $conn->exec("DELETE FROM version WHERE uuid_file = '".$file_uuid."';");
+}
+
+
+function remove_rec_element($conn, $user, $myelement_uuid, $version, &$stack)
+{
+
+    //base cases
+    if(is_int($version)) //i'm dealing with one version... neat!
+    {
+        return remove_version($conn, $myelement_uuid, $version, &$stack);
+    }
+
+    if(!get_if_is_dir($conn, $myelement_uuid)) //i'm dealing with a file with one or more versions
+    {
+        foreach(get_all_versions_uuid($conn, $myelement_uuid) as $v)
+        {
+            array_push($stack, $v);
+        }
+        return remove_all_versions($conn, $myelement_uuid);
+    }
+
+    $children_uuid = get_children_uuid($conn, $myelement_uuid);
+
+    if(!($children_uuid == 'nochildren'))
+        foreach($children_uuid as $child_uuid)
+            remove_rec_element($conn, $user, $child_uuid, null, &$stack);
+
+    $conn->exec("DELETE FROM file WHERE uuid = '".$myelement_uuid"';"); //finally removing this directory
+
+
+}
+
+//
+function remove_element($conn, $user, $path, $name, $version)
+{
+    try
+    {
+        $conn->beginTransaction();
+
+        $stack_of_uuid = array();
+        remove_rec_element($conn, $user,  get_last_element_uuid($conn, $user, $path.'/'.$name), $version, &$stack_of_uuid);
+
+        $conn->commit();
+
+        foreach($stack_of_uuid as v_uuid)
+            remove_from_persistent(v_uuid);
+    }
+    catch(PDOException $e)
+    {
+        $conn->rollBack();
+        throw new DbException($e->getMessage());
+    }
+
+}
+
+
+
 
 
 
