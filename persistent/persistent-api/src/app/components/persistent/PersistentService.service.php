@@ -30,6 +30,9 @@
                 throw new InvalidArgumentException("'uuid' must be a valid uuid v4!");
             }
 
+            // Compose file name
+            $file = self::PERSISTENT_DIR . '/' . $uuid;
+
             if (file_exists($file) && is_file($file)) {
                 // Create the file
                 $resource = fopen($file, 'rb');
@@ -89,7 +92,8 @@
                 throw new InvalidArgumentException("'uuid' must be a valid uuid v4!");
             }
 
-           
+            // Compose file name
+            $file = self::PERSISTENT_DIR . '/' . $uuid;
 
             return file_exists($file) && is_file($file);
         }
