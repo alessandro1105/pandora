@@ -28,7 +28,7 @@
                 $persistentService->delete($uuid);
 
                 // Success response
-                $this->success(204);
+                $this->success(200);
 
             } catch (InvalidArgumentException $e) {
                 // Success response
