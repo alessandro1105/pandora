@@ -13,3 +13,6 @@ RUN a2enmod rewrite
 
 # Copy content from build folder to nginx folder
 COPY ./build/ /var/www/html/
+
+# Create /persistent and grant 777 permissions to store data
+RUN mkdir /persistent & chmod -R 777 /persistent 
