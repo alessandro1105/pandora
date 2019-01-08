@@ -12,4 +12,12 @@
 	$azzurro
 		->app("app", [
 			'persistent'
-		]);
+		])
+
+		->config(function ($routerProvider) {
+
+			$routerProvider
+				->otherwise(function () {
+					http_response_code(404);
+				});
+		});
