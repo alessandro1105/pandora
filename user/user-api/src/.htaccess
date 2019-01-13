@@ -1,0 +1,10 @@
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# Enable this option to do not redirect the request to index.php for the "assets/" directory.
+# Change {{BASE}} with your base url
+#RewriteCond %{REQUEST_URI} !^/{{BASE}}/assets/
+
+RewriteCond %{ENV:REDIRECT_STATUS} !200
+RewriteRule ^(.*)$ index.php/$1 [L,QSA,NC]
+</IfModule>
