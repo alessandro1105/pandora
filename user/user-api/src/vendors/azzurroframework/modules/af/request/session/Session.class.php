@@ -59,7 +59,7 @@
 			if (session_status() != PHP_SESSION_ACTIVE) {
 
 				// Use strict mode for security reasons
-				ini_set('session.use_strict_mode', 1);
+				ini_set('session.use_strict_mode', 'On');
 
 				// Check if there is a cookie for the session (if not the session has not been started)
 				if (!isset($_COOKIE['PHPSESSID'])) {
@@ -165,7 +165,7 @@
 				session_commit();
 
 				// Disable strict session
-				ini_set('session.use_strict_mode', 0);
+				ini_set('session.use_strict_mode', 'Off');
 
 				// Start session with new session ID
 				session_id($id);
@@ -202,7 +202,7 @@
 				session_commit();
 
 				// Disable strict session
-				ini_set('session.use_strict_mode', 0);
+				ini_set('session.use_strict_mode', 'Off');
 
 				// Start session with new session ID
 				session_id($id);

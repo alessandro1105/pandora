@@ -20,7 +20,7 @@
 	@url       https://github.com/alessandro1105
 */
 
-	namespace AzzurroFramework\Core\Exceptions;
+	namespace AzzurroFramework\Core\Injector\Exceptions;
 	
 	use \Exception;
 	
