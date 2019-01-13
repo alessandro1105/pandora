@@ -25,7 +25,7 @@ CREATE TABLE file (
     uuid UUID NOT NULL,
     file_name FILENAME_TYPE NOT NULL,
     user_uuid UUID NOT NULL,
-    is_dir BOOLEAN NOT NULL DEFAULT FALSE,
+    is_dir BOOLEAN NOT NULL DEFAULT FALSE, --it also accepts 1 or '1' and 0 or '0'
     creation_time TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
 
     PRIMARY KEY (uuid)
