@@ -1,37 +1,91 @@
 <?php
 
+namespace App\Components\Storage\Get;
+
+use \InvalidArgumentException;
+
+use App\Components\Storage\Util\storage_service_util as util;
+use App\Components\Storage\Model\storage_service_model as m;
 /*
 The controller that dispatch to the right function in storage_service_util.php
 - list the content of a directory
 - download a file version
+*This file expects the following argument:
+* user and path are mandatory. Empty path will be interpreted as the root directory for the choosen user
+* filename is optional. If present, also version could be present
 */
-include 'storage_service_util.php';
 
-if( (isset($_GET['user'])) AND (isset($_GET['path'])) )
+class GetController
 {
-    //create a connection with the database using the proper function defined in storage_service_util.php
-    $myConn = getConnection();
 
-    $path = pathify($_GET['path']); // removing the possible initial / (that surely is present) and final /
-
-    //check on useruuid and on path
-    if( (!is_uuid($_GET['user'])) )
-        throw new IllegalDataException();
-
-    else
+    public function action($router, $storageService)
     {
-        //call the proper function accorting to what it is set
-        if(!isset($_GET['fileName']))
-            list($myConn, $_GET['user'], $path);
-        else
-            if(!isset($_GET['version']))
-                file_download($myConn, $_GET['user'], $path, $_GET['fileName'], 0);
-            else
-                if(!is_int($_GET['version')) OR ($_GET['version']<=0) )
-                    throw new IllegalDataException();
+        try
+        {
+            if( (isset($_GET['user'])) AND (isset($_GET['path'])) )
+            {
+
+                $path = util::pathify($_GET['path']); // removing the possible initial / (that surely is present) and final /
+
+                //check on useruuid and on path
+                if( (!is_uuid($_GET['user'])) )
+                    throw new InvalidArgumentException();
+
+                //if necessary activate a connection with the database using the proper function
+                m::getConnection();
+
+
+                //call the proper function accorting to what it is set
+                if(!isset($_GET['fileName']))
+                    echo json_encode(m::list($_GET['user'], $path));
                 else
-                    file_download($myConn, $_GET['user'], $path, $_GET['fileName'], $_GET['version']);
+                    if(!isset($_GET['version']))
+                        self::FileDownloading(m::get_file_uuid($_GET['user'], $path, $_GET['fileName'], 0));
+                    else
+                        if(!is_int($_GET['version')) OR ($_GET['version']<0) ) //0 or version non set has the same meaning: take the highest version
+                            throw new InvalidArgumentException();
+                        else
+                            self::FileDownloading(m::get_file_uuid($_GET['user'], $path, $_GET['fileName'], $_GET['version']));
+
+                this->success(200);
+
+            }
+        }
+        catch(InvalidArgumentException $e)
+        {
+            $$this->error(400);
+        }
+        catch(DbException $d)
+        {
+            $this->error(503);
+        }
     }
 
-    $myConn = null;
+
+    private static function FileDownloading($file_uuid)
+    {
+        $url = 'http://persistent-api/downloader.php?fileToDownload='.$file_uuid;
+
+        // Open php output
+        $output = fopen('php://output','w');
+
+        while(!feof(file_get_contents($url))) {
+              fwrite($file, fread(file_get_contents($url), 8192), 8192);
+          }
+
+         // Close php output
+        fclose($output);
+    }
+
+    private function success($statusCode)
+    {
+        http_response_code($statusCode);
+    }
+
+    private function error($statusCode)
+    {
+        http_response_code($statusCode);
+    }
+
+
 }
