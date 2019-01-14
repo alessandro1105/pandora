@@ -43,13 +43,13 @@ static function getConnection()
 * fetching a single row result from a query to storage-db
 * return a string with the result
 */
-private static function do_fetch($sql, $colName)
+private static function do_fetch($stmt, $colName)
 {
 
         try
         {
 
-            $result = self::$conn->query($sql)->fetch();
+            $result = $stmt->fetch();
 
             if(! $result )
             {
@@ -58,7 +58,7 @@ private static function do_fetch($sql, $colName)
         }
         catch(PDOException $e)
         {
-            throw new DataNotFoundException("Error from pdo: ". $e->getMessage();)
+            throw new DataNotFoundException("Error from pdo: ". $e->getMessage());
         }
 
         //maybe some check on colName?? But in a utility internal static function maybe not necessary...
@@ -70,13 +70,13 @@ private static function do_fetch($sql, $colName)
 * fetching a single row result from a query to storage-db
 * return a json encoded string
 */
-private static function do_fetchAll($sql)
+private static function do_fetchAll($stmt)
 {
 
     try
     {
 
-        $result = self::$conn->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if(! $result )
         {
@@ -87,7 +87,7 @@ private static function do_fetchAll($sql)
     }
     catch(PDOException $e)
     {
-        throw new DataNotFoundException("Error from pdo: ". $e->getMessage();)
+        throw new DataNotFoundException("Error from pdo: ". $e->getMessage());
     }
 
 
@@ -112,12 +112,18 @@ static function list($user, $path)
 
     $last_dir_uuid = self::get_last_element_uuid($user, $path);
 
-    $sql="SELECT F.file_name, F.is_dir, F.creation_time "
-        ."FROM file AS F INNER JOIN has_parent AS H "
-        ."ON F.uuid = H.uuid_child "
-        ."WHERE H.uuid_parent = '".$parent_uuid."';";
+$sql = <<<SQL
+SELECT F.file_name, F.is_dir, F.creation_time
+    FROM file AS F INNER JOIN has_parent AS H
+        ON F.uuid = H.uuid_child
+        WHERE H.uuid_parent = :last_dir_uuid
+SQL;
 
-    return self::do_fetchAll($sql);
+    $stmt = self::$conn->prepare($sql);
+
+    $stmt->bindParam(':last_dir_uuid', $last_dir_uuid, PDO::PARAM_STR, 36);
+
+    return self::do_fetchAll($stmt);
 
 }
 
@@ -155,13 +161,25 @@ static function get_root_uuid($user)
 {
 
     //usefully return the empty string if no root for the user was found
-    $sql = "SELECT IFNULL (( SELECT uuid FROM file WHERE user_uuid = '".$user."' AND file_name = '/' ), 'noroot');";
+$sql = <<<SQL
+SELECT IFNULL ((
+    SELECT uuid
+        FROM file
+            WHERE user_uuid = :user AND file_name = '/'
+), 'noroot');
+SQL;
+
+
+    $stmt = self::$conn->prepare($sql);
+
+    $stmt->bindParam(':user', $user, PDO::PARAM_STR, 36);
+
+    $usr_root = self::do_fetch($stmt, "uuid");
 
     //the user has no root folder, let's create it
     if ($usr_root == "noroot")
         return self::make_root_dir($user);
 
-    return self::do_fetch($sql, "uuid");
 }
 
 static function get_child_uuid($parent_uuid, $fname)
@@ -169,12 +187,21 @@ static function get_child_uuid($parent_uuid, $fname)
 
     //get the child"s uuid with name equals to $fname
 
-    $sql="SELECT IFNULL (( SELECT F.uuid "
-        ."FROM file AS F INNER JOIN has_parent AS H "
-        ."ON F.uuid = H.uuid_child "
-        ."WHERE H.uuid_parent = '".$parent_uuid."' AND F.file_name = '".$fname."' ), 'notfound');";
+$sql = <<<SQL
+SELECT IFNULL ((
+    SELECT F.uuid
+        FROM file AS F INNER JOIN has_parent AS H
+            ON F.uuid = H.uuid_child
+            WHERE H.uuid_parent = :parent_uuid AND F.file_name = :fname ), 'notfound')
+SQL;
 
-    return self::do_fetch($sql, "uuid");
+
+    $stmt = self::$conn->prepare($sql);
+
+    $stmt->bindParam(':parent_uuid', $parent_uuid, PDO::PARAM_STR, 36);
+    $stmt->bindParam(':fname', $fname, PDO::PARAM_STR, 255);
+
+    return self::do_fetch($stmt, "uuid");
 }
 
 static function get_children_uuid($parent_uuid)
@@ -182,12 +209,19 @@ static function get_children_uuid($parent_uuid)
     if(!self::get_if_is_dir($parent_uuid))
         throw new InvalidArgumentException();
 
-    $sql="SELECT IFNULL (( SELECT F.uuid "
-        ."FROM file AS F INNER JOIN has_parent AS H "
-        ."ON F.uuid = H.uuid_child "
-        ."WHERE H.uuid_parent = '".$parent_uuid."' ), 'nochildren');";
+$sql = <<<SQL
+SELECT IFNULL ((
+    SELECT F.uuid
+        FROM file AS F INNER JOIN has_parent AS H
+            ON F.uuid = H.uuid_child
+            WHERE H.uuid_parent = :parent_uuid ), 'nochildren')
+SQL;
 
-    return self::do_fetchAll($sql);
+    $stmt = self::$conn->prepare($sql);
+
+    $stmt->bindParam(':parent_uuid', $parent_uuid, PDO::PARAM_STR, 36);
+
+    return self::do_fetchAll($stmt);
 }
 
 
@@ -219,58 +253,87 @@ static function get_version_uuid($user, $path, $fileName, $version)
 
 static function get_all_versions_uuid($myfile_uuid)
 {
-    $sql =  . "SELECT uuid "
-            . "FROM version "
-            . "WHERE uuid_file = '".$myfile_uuid."'  ;";
+$sql = <<<SQL
+SELECT uuid
+    FROM version
+        WHERE uuid_file = :myfile_uuid
+SQL;
 
-    return self::do_fetchAll($sql);
+    $stmt = self::$conn->prepare($sql);
+
+    $stmt->bindParam(':myfile_uuid', $myfile_uuid, PDO::PARAM_STR, 36);
+
+    return self::do_fetchAll($stmt);
 
 }
 
 static function get_highest_version_uuid($myfile_uuid)
 {
-    $sql = "SELECT uuid "
-         . "FROM version "
-         . "WHERE uuid_file = '".$myfile_uuid."' AND version_number = ( "
-         . "SELECT MAX(V2.version_number) "
-         . "FROM version AS V2 "
-         . "WHERE V2.uuid_file = '".$myfile_uuid."' "
-         . ");";
+$sql = <<<SQL
+SELECT uuid
+    FROM version
+        WHERE uuid_file = :myfile_uuid AND version_number = (
+                SELECT MAX(V2.version_number)
+                    FROM version AS V2
+                        WHERE V2.uuid_file = :myfile_uuid )
+SQL;
 
-    return self::do_fetch($sql, "uuid");
+    $stmt = self::$conn->prepare($sql);
+
+    $stmt->bindParam(':myfile_uuid', $myfile_uuid, PDO::PARAM_STR, 36);
+
+    return self::do_fetch($stmt, "uuid");
 }
 
 static function get_lowest_version_uuid($myfile_uuid)
 {
-    $sql = "SELECT uuid "
-         . "FROM version "
-         . "WHERE uuid_file = '".$myfile_uuid."' AND version_number = ( "
-         . "SELECT MIN(V2.version_number) "
-         . "FROM version AS V2 "
-         . "WHERE V2.uuid_file = '".$myfile_uuid."' "
-         . ");";
+$sql = <<<SQL
+SELECT uuid
+    FROM version
+        WHERE uuid_file = :myfile_uuid AND version_number = (
+            SELECT MIN(V2.version_number)
+                FROM version AS V2
+                    WHERE V2.uuid_file = :myfile_uuid )
+SQL;
 
-    return self::do_fetch($sql, "uuid");
+    $stmt = self::$conn->prepare($sql);
+
+    $stmt->bindParam(':myfile_uuid', $myfile_uuid, PDO::PARAM_STR, 36);
+
+    return self::do_fetch($stmt, "uuid");
 }
 
 static function get_number_of_versions_present($myfile_uuid)
 {
-    $sql = "SELECT COUNT(*) FROM ( "
-         . "SELECT uuid "
-         . "FROM version "
-         . "WHERE uuid_file = '".$myfile_uuid."' "
-         . ") tableAlias ;";
+$sql = <<<SQL
+SELECT COUNT(*) FROM (
+    SELECT uuid
+        FROM version
+            WHERE uuid_file = :myfile_uuid
+) tableAlias
+SQL;
 
-    return self::do_fetch($sql, 'COUNT(*)');
+    $stmt = self::$conn->prepare($sql);
+
+    $stmt->bindParam(':myfile_uuid', $myfile_uuid, PDO::PARAM_STR, 36);
+
+    return self::do_fetch($stmt, 'COUNT(*)');
 }
 
 static function get_this_version_uuid($version, $myfile_uuid)
 {
-    $sql = "SELECT uuid "
-         . "FROM version "
-         . "WHERE uuid_file = '".$myfile_uuid."' AND version_number = '".$version."';"
+$sql = <<<SQL
+SELECT uuid
+    FROM version
+        WHERE uuid_file = :myfile_uuid AND version_number = :version
+SQL;
 
-    return self::do_fetch($sql, "uuid");
+    $stmt = self::$conn->prepare($sql);
+
+    $stmt->bindParam(':myfile_uuid', $myfile_uuid, PDO::PARAM_STR, 36);
+    $stmt->bindParam(':version_number', $myfile_uuid, PDO::PARAM_INT);
+
+    return self::do_fetch($stmt, "uuid");
 }
 
 /*
@@ -279,11 +342,17 @@ static function get_this_version_uuid($version, $myfile_uuid)
 */
 static function get_if_is_dir($myfile_uuid)
 {
-    $sql = "SELECT is_dir "
-            . "FROM file "
-            . "WHERE uuid = '".$myfile_uuid."' ;"
+$sql = <<<SQL
+SELECT is_dir
+    FROM file
+        WHERE uuid = :myfile_uuid
+SQL;
 
-    return self::do_fetch($sql, "is_dir");
+    $stmt = self::$conn->prepare($sql);
+
+    $stmt->bindParam(':myfile_uuid', $myfile_uuid, PDO::PARAM_STR, 36);
+
+    return self::do_fetch($stmt, "is_dir");
 }
 
 
@@ -298,19 +367,25 @@ static function get_if_is_dir($myfile_uuid)
 /*
 * self::$conn         is the connection (hopefully opened) to communicate with storage-db
 * $parent_uuid  uuid of the parent (NULL if I want to insert root)
-* $arr          the array contains the ordered value to be inserted.
+* $arr          the array contains the ordered value to be inserted (uuid, file_name, user_uuid, is_dir)
 *
 * Keep dinstinct this insertion from the others, due to additional existence check and so different input parameters set
 */
 static function do_ins_in_file($parent_uuid, $arr)
 {
     if(self::get_child_uuid($parent_uuid, $arr[1]) != 'notfound')
-        throw new DataAlreadyPresentException(); //cannot insert a file if it's already present a file in the same directory with the same name
+        throw new IllegalArgumentException(); //cannot insert a file if it's already present a file in the same directory with the same name
 
-    $in_file = "INSERT INTO file (uuid, file_name, user_uuid, is_dir) VALUES (?,?,?,?)";
+    $in_file = "INSERT INTO file (uuid, file_name, user_uuid, is_dir) VALUES (:uuid, :file_name, :user_uuid, :is_dir)";
 
     $stmt= self::$conn->prepare($in_file);
-    $stmt->execute($arr);
+
+    $stmt->bindParam(':uuid', $arr[0], PDO::PARAM_STR, 36);
+    $stmt->bindParam(':file_name',  $arr[1], PDO::PARAM_STR, 255);
+    $stmt->bindParam(':user_uuid',  $arr[2], PDO::PARAM_STR, 36);
+    $stmt->bindParam(':is_dir',  $arr[3], PDO::PARAM_BOOL);
+
+    $stmt->execute();
 
 }
 
@@ -322,33 +397,47 @@ static function do_ins_in_file($parent_uuid, $arr)
 */
 static function do_ins($table, $arr)
 {
-    $in_has_parent = "INSERT INTO has_parent (uuid_child, uuid_parent) VALUES (?,?)";
-    $in_version = "INSERT INTO version (uuid, file_size, uuid_file) VALUES (?,?,?)";
+    $in_has_parent = "INSERT INTO has_parent (uuid_child, uuid_parent) VALUES (:uuid_child, :uuid_parent)";
+    $in_version = "INSERT INTO version (uuid, file_size, uuid_file) VALUES (:uuid, :file_size, :uuid_file)";
 
 
-    $sql='no table selected, so this is an invalid sql query'; // no exception is thrown, it's just an internal error that should never happen
+    $sql=''; // no exception is thrown, it's just an internal error that should never happen
 
 
     if($table == 'has_parent')
-        $sql=$in_has_parent;
+    {
+        $stmt= self::$conn->prepare($in_has_parent);
+
+        $stmt->bindParam(':uuid_child', $arr[0], PDO::PARAM_STR, 36);
+        $stmt->bindParam(':uuid_parent',  $arr[1], PDO::PARAM_STR, 36);
+
+    }
     else
         if($table == 'version')
-            $sql=$in_version;
+        {
+            $stmt= self::$conn->prepare($in_version);
 
+            $stmt->bindParam(':uuid', $arr[0], PDO::PARAM_STR, 36);
+            $stmt->bindParam(':file_size',  $arr[1], PDO::PARAM_INT);
+            $stmt->bindParam(':uuid_file',  $arr[2], PDO::PARAM_STR, 36);
 
-    $stmt= self::$conn->prepare($sql);
-    $stmt->execute($arr);
+        }
+
+    if($sql == '')
+        return;
+
+    $stmt->execute();
 }
 
 
 
 static function do_del($table, $uuid)
 {
-    $del_file = "DELETE FROM file WHERE uuid = '".$uuid."' ;";
-    $del_version = "DELETE FROM version WHERE uuid = '".$uuid."' ;";
-    $del_has_parent = "DELETE FROM has_parent WHERE uuid_child = '".$uuid."' ;";
+    $del_file = "DELETE FROM file WHERE uuid = :uuid";
+    $del_version = "DELETE FROM version WHERE uuid = :uuid";
+    $del_has_parent = "DELETE FROM has_parent WHERE uuid_child = :uuid";
 
-    $sql='no table selected, so this is an invalid sql query'; // no exception is thrown, it's just an internal error that should never happen
+    $sql=''; // no exception is thrown if it remains empty, it's just an internal error that should never happen
 
     if($table == 'file')
         $sql=$del_file;
@@ -359,8 +448,14 @@ static function do_del($table, $uuid)
         if($table == 'version')
             $sql=$del_version;
 
-    $stmt= self::$conn->prepare($sql);
-    $stmt->execute($arr);
+    if($sql == '')
+        return;
+
+    $stmt = self::$conn->prepare($sql);
+
+    $stmt->bindParam(':uuid', $uuid, PDO::PARAM_STR, 36);
+
+    $stmt->execute();
 
 
 }
@@ -486,7 +581,13 @@ static function move_element($user, $path, $name, $newpath, $newname)
         //renaming is required
         if($name!=$newname)
         {
-            self::$conn->exec("UPDATE file SET file_name = '".$newname."' WHERE uuid = '".$myfile_uuid."';");
+
+            $stmt = self::$conn->prepare("UPDATE file SET file_name = :newname WHERE uuid = :myfile_uuid");
+
+            $stmt->bindParam(':newname', $newname, PDO::PARAM_STR, 255);
+            $stmt->bindParam(':myfile_uuid', $myfile_uuid, PDO::PARAM_STR, 36);
+
+            $stmt->execute();
         }
 
         //moving is required
@@ -495,7 +596,14 @@ static function move_element($user, $path, $name, $newpath, $newname)
             //getting the uuid of the future parent
             $future_parent_uuid = self::get_last_element_uuid($user, $newpath);
 
-            self::$conn->exec("UPDATE has_parent SET uuid_parent = '".$future_parent_uuid."' WHERE uuid_child = '".$myfile_uuid."';");
+
+
+            $stmt = self::$conn->prepare("UPDATE has_parent SET uuid_parent = :future_parent_uuid WHERE uuid_child = :myfile_uuid");
+
+            $stmt->bindParam(':future_parent_uuid', $future_parent_uuid, PDO::PARAM_STR, 36);
+            $stmt->bindParam(':myfile_uuid', $myfile_uuid, PDO::PARAM_STR, 36);
+
+            $stmt->execute();
         }
         self::$conn->commit();
 
@@ -529,13 +637,25 @@ static function remove_version($file_uuid, int $version_number, &$stack)
     if($version_number===0)
     {
         $v_uuid = self::get_highest_version_uuid($file_uuid);
-        self::$conn->exec("DELETE FROM version WHERE uuid = '".$v_uuid."';");
+
+
+        $stmt = self::$conn->prepare("DELETE FROM version WHERE uuid = :v_uuid");
+
+        $stmt->bindParam(':v_uuid', $v_uuid, PDO::PARAM_STR, 36);
+
+        $stmt->execute();
 
     }
     else
     {
         $v_uuid = self::get_this_version_uuid($version_number, $file_uuid);
-        self::$conn->exec("DELETE FROM version WHERE uuid = '".$v_uuid."';");
+
+
+        $stmt = self::$conn->prepare("DELETE FROM version WHERE uuid = :v_uuid");
+
+        $stmt->bindParam(':v_uuid', $v_uuid, PDO::PARAM_STR, 36);
+
+        $stmt->execute();
     }
 
     array_push($stack, $v_uuid);
@@ -543,7 +663,11 @@ static function remove_version($file_uuid, int $version_number, &$stack)
 
 static function remove_all_version_($file_uuid)
 {
-    self::$conn->exec("DELETE FROM version WHERE uuid_file = '".$file_uuid."';");
+    $stmt = self::$conn->prepare("DELETE FROM version WHERE uuid_file = :file_uuid");
+
+    $stmt->bindParam(':file_uuid', $file_uuid, PDO::PARAM_STR, 36);
+
+    $stmt->execute();
 }
 
 
@@ -575,7 +699,12 @@ static function remove_rec_element($user, $myelement_uuid, $version, &$stack)
             self::remove_rec_element($user, $child_uuid, null, &$stack);
 
     //first I remove all the children of the directory and then the parent directory... so no children without parent are ever present
-    self::$conn->exec("DELETE FROM file WHERE uuid = '".$myelement_uuid"';"); //finally removing this directory
+
+    $stmt = self::$conn->prepare("DELETE FROM file WHERE uuid = :myelement_uuid"); //now remove this directory
+
+    $stmt->bindParam(':myelement_uuid', $myelement_uuid, PDO::PARAM_STR, 36);
+
+    $stmt->execute();
 
 
 }
