@@ -11,9 +11,25 @@
 	// Application main module
 	$azzurro
 		->app("app", [
-
+			'common',
+			'user'
 		])
 
-		->run(function () {
-			echo "AzzurroFramework runned!";
+		// Config the module
+		->config(function ($requestProvider, $routerProvider) {
+
+			$requestProvider->session
+				->setPrefix('pndr-')
+				->setSavePath('/tmp');
+
+			// Create simple 404 handler
+			$routerProvider
+				->otherwise(function () {
+					http_response_code(404);
+				});
+		})
+
+		// Run the module
+		->run(function ($request) {
+			$request->session->start();
 		});
