@@ -4,10 +4,10 @@ namespace App\Components\Storage\Get;
 
 use \InvalidArgumentException;
 
-use App\Components\Storage\Util\storage_service_util as util;
-use App\Components\Storage\Model\storage_service_model as m;
+use App\Components\Storage\Util\StorageServiceUtil as util;
+use App\Components\Storage\Model\StorageServiceModel as m;
 /*
-The controller that dispatch to the right function in storage_service_util.php
+The controller that dispatch to the right function in StorageServiceUtil.php
 - list the content of a directory
 - download a file version
 *This file expects the following argument:
@@ -28,11 +28,11 @@ class GetController
                 $path = util::pathify($_GET['path']); // removing the possible initial / (that surely is present) and final /
 
                 //check on useruuid and on path
-                if( (!is_uuid($_GET['user'])) )
+                if( (!isUuid($_GET['user'])) )
                     throw new InvalidArgumentException();
 
                 //if necessary activate a connection with the database using the proper function
-                m::getConnection();
+
 
 
                 //call the proper function accorting to what it is set
@@ -40,12 +40,12 @@ class GetController
                     echo json_encode(m::list($_GET['user'], $path));
                 else
                     if(!isset($_GET['version']))
-                        self::FileDownloading(m::get_file_uuid($_GET['user'], $path, $_GET['fileName'], 0));
+                        self::fileDownloading(m::getFileUuid($_GET['user'], $path, $_GET['fileName'], 0));
                     else
                         if(!is_int($_GET['version')) OR ($_GET['version']<0) ) //0 or version non set has the same meaning: take the highest version
                             throw new InvalidArgumentException();
                         else
-                            self::FileDownloading(m::get_file_uuid($_GET['user'], $path, $_GET['fileName'], $_GET['version']));
+                            self::fileDownloading(m::getFileUuid($_GET['user'], $path, $_GET['fileName'], $_GET['version']));
 
                 this->success(200);
 
@@ -55,14 +55,10 @@ class GetController
         {
             $$this->error(400);
         }
-        catch(DbException $d)
-        {
-            $this->error(503);
-        }
     }
 
 
-    private static function FileDownloading($file_uuid)
+    private static function fileDownloading($file_uuid)
     {
         $url = 'http://persistent-api/downloader.php?fileToDownload='.$file_uuid;
 

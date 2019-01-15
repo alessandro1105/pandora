@@ -4,8 +4,8 @@ namespace App\Components\Storage\Edit;
 
 use \InvalidArgumentException;
 
-use App\Components\Storage\Util\storage_service_util as util;
-use App\Components\Storage\Model\storage_service_model as m;
+use App\Components\Storage\Util\StorageServiceUtil as util;
+use App\Components\Storage\Model\StorageServiceModel as m;
 
 //possible parameter in $_GET:
 //user      (the user uuid)
@@ -31,34 +31,34 @@ class EditController
                 if(!(isset($_GET['rename'])) AND !(isset($_GET['move'])) )
                     throw new InvalidArgumentException(); //nothing to be done...
 
-                $twopieces = util::divide_path_from_last($path);
+                $twopieces = util::dividePathFromLast($path);
 
                 $path=$twopieces[0];
                 $name=$twopieces[1];
 
 
                 //check time!!
-                if( (!util::is_uuid($_GET['user'])) )
+                if( (!util::isUuid($_GET['user'])) )
                     throw new InvalidArgumentException();
 
-                if(isset($_GET['rename']) AND !(util::is_file_name($_GET['rename'])) )
+                if(isset($_GET['rename']) AND !(util::isFileName($_GET['rename'])) )
                     throw new InvalidArgumentException();
                 //no check on paths, because pathify will check them and throw an exception if necessary
 
 
 
-                //create a connection with the database using the proper function defined in storage_service_util.php
-                m::getConnection();
+                //create a connection with the database using the proper function defined in StorageServiceUtil.php
+
 
 
 
                 if(!(isset($_GET['move'])))
-                    m::rename_element($_GET['user'], $path, $name, $_GET['rename']);
+                    m::renameElement($_GET['user'], $path, $name, $_GET['rename']);
                 else
                     if(!(isset($_GET['rename'])))
-                        m::move_element(($_GET['user'], $path, $name, util::pathify($_GET['move']), $name);
+                        m::moveElement(($_GET['user'], $path, $name, util::pathify($_GET['move']), $name);
                     else //at this point every field is set
-                        m::move_element(($_GET['user'], $path, $name, util::pathify($_GET['move']), $_GET['rename']);
+                        m::moveElement(($_GET['user'], $path, $name, util::pathify($_GET['move']), $_GET['rename']);
 
 
                 $this->success(200);
@@ -70,10 +70,7 @@ class EditController
         {
             $this->error(400);
         }
-        catch(DbException $d)
-        {
-            $this->error(503);
-        }
+
     }
 
     private function success($statusCode)

@@ -5,8 +5,8 @@ namespace App\Components\Storage\Delete;
 
 use \InvalidArgumentException;
 
-use App\Components\Storage\Util\storage_service_util as util;
-use App\Components\Storage\Model\storage_service_model as m;
+use App\Components\Storage\Util\StorageServiceUtil as util;
+use App\Components\Storage\Model\StorageServiceModel as m;
 
 //possible parameter in $_GET:
 //user      MANDATORY (the user uuid)
@@ -23,12 +23,12 @@ class DeleteController
             if( (isset($_GET['user'])) AND (isset($_GET['path'])) )
             {
 
-                $twopieces = util::divide_path_from_last($path);
+                $twopieces = util::dividePathFromLast($path);
                 $path = $twopieces[0];
                 $name = $twopieces[1];
 
                 //check time!!
-                if( (!util::is_uuid($_GET['user'])) )
+                if( (!util::isUuid($_GET['user'])) )
                     throw new InvalidArgumentException();
 
                 $stack = array();
@@ -37,9 +37,9 @@ class DeleteController
                     if(!is_int($_GET['version']) OR $_GET['version']<0 )
                         throw new InvalidArgumentException();
                     else
-                        $stack = remove_element($_GET['user'], $path, $name, $_GET['version']);
+                        $stack = removeElement($_GET['user'], $path, $name, $_GET['version']);
                 else
-                    $stack = remove_element($_GET['user'], $path, $name, NULL);
+                    $stack = removeElement($_GET['user'], $path, $name, NULL);
 
                 foreach($stack as v_uuid) //each of them correspond to a file version, i.e. a physical file in the persistent
                     file_get_contents('http://persistent-api/deleter.php?fileToDelete='.$v_uuid);
@@ -52,10 +52,6 @@ class DeleteController
         catch(InvalidArgumentException $e)
         {
             $this->error(400);
-        }
-        catch(DbException $d)
-        {
-            $this->error(503);
         }
     }
 

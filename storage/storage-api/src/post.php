@@ -4,8 +4,8 @@ namespace App\Components\Storage\Post;
 
 use \InvalidArgumentException;
 
-use App\Components\Storage\Util\storage_service_util as util;
-use App\Components\Storage\Model\storage_service_model as m;
+use App\Components\Storage\Util\StorageServiceUtil as util;
+use App\Components\Storage\Model\StorageServiceModel as m;
 
 
 //possible parameter in $_GET: user, path, isDir
@@ -25,22 +25,22 @@ public function action($router, $storageService)
             $path = util::pathify($_GET['path']); // check ( not empty & not containing // ) removing the possible initial / (that surely is present) and final /
 
             //check on useruuid and on path
-            if( (!util::is_uuid($_GET['user'])) )
+            if( (!util::isUuid($_GET['user'])) )
                 throw new InvalidArgumentException();
 
-            $scissor = util::divide_path_from_last($path);
+            $scissor = util::dividePathFromLast($path);
             $path = $scissor[0];
             $name = $scissor[1];
 
 
-            //create a connection with the database using the proper function defined in storage_service_util.php
-            m::getConnection();
+            //create a connection with the database using the proper function defined in StorageServiceUtil.php
+
 
 
             if( (isset($_GET['isDir'])) AND ($_GET['isDir'] == true) )
             {
 
-                m::make_dir($_GET['user'], $path, $name);
+                m::makeDir($_GET['user'], $path, $name);
 
                 $this->success(201);
             }
@@ -59,7 +59,7 @@ public function action($router, $storageService)
                 {
             */
                     //version uuid (the name of the file physically stored in persistent storage)
-                    $version_uuid = util::uuid_v4();
+                    $version_uuid = util::uuidV4();
 
                     // Open php input (the file I want to upload)
                     $input = file_get_contents('php://input');
@@ -74,24 +74,21 @@ public function action($router, $storageService)
                      // Close php input
                     fclose($input);
 
-                    $possible_uuid_toberemoved = m::add_version($_GET['user'], $path, $name, $version_uuid, $_GET['size']); //WARNING: is 'size' given?
+                    $possible_uuid_toberemoved = m::addVersion($_GET['user'], $path, $name, $version_uuid, $_GET['size']); //WARNING: is 'size' given?
 
-                    if(u::is_uuid($possible_uuid_toberemoved))
+                    if(u::isUuid($possible_uuid_toberemoved))
                         file_get_contents('http://persistent-api/deleter.php?fileToDelete='.$possible_uuid_toberemoved);
 
                     $this->success(202);
 
                 //}
+
             }
         }
     }
     catch(InvalidArgumentException $e)
     {
         $this->error(400);
-    }
-    catch(DbException $d)
-    {
-        $this->error(503);
     }
 }
 
