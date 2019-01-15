@@ -11,72 +11,82 @@
     class SignupController {
 
         // Action of the controller
-        public function action(/*$request, $userService*/) {
-            
-            echo "signup";
+        public function action($request, $userService) {
 
-            // if ($request->input->has('username') && 
-            //     $request->input->has('email') && 
-            //     $request->input->has('password')) {
+            // Check if the user is already logged
+            if ($userService->isLogged()) {
+                // If the user is already logged in
+                $this->error(403, [
+                    'errors' => [
+                        'userLogged' => 'User is logged in.'
+                    ]
+                ]); // Forbidden
+                // Stop executing
+                return false;
+            }
 
-            //     // Get the parameter from the request
-            //     $username = $request->input->get('username');
-            //     $email = $request->input->get('email');
-            //     $password = $request->input->get('password');
+            if ($request->input->has('username') && 
+                $request->input->has('email') && 
+                $request->input->has('password')) {
 
-            //     // Try to register the user
-            //     try {
-            //         $userService->signup($username, $email, $password);
+                // Get the parameter from the request
+                $username = $request->input->get('username');
+                $email = $request->input->get('email');
+                $password = $request->input->get('password');
 
-            //     // Bad request (username, email or password are malformed)
-            //     } catch (InvalidArgumentException $e) {
-            //         // Bad Request
-            //         $this->error(400, [
-            //             'errors' => [
-            //                 'badRequest' => 'The data in the request is wrong.'
-            //             ]
-            //         ]); // Bad Request
-            //         return false;
+                // Try to register the user
+                try {
+                    $userService->signup($username, $email, $password);
 
-            //     // Username already registered
-            //     } catch (UsernameAlreadyRegisteredException $e) {
-            //         // Error response (Conflict)
-            //         $this->error(409, [
-            //             'errors' => [
-            //                 'usernameRegistered' => 'Username already registered.'
-            //             ]
-            //         ]);
-            //         return false;
+                // Bad request (username, email or password are malformed)
+                } catch (InvalidArgumentException $e) {
+                    // Bad Request
+                    $this->error(400, [
+                        'errors' => [
+                            'badRequest' => 'The data in the request is wrong.'
+                        ]
+                    ]); // Bad Request
+                    return false;
 
-            //     } catch (EmailAlreadyRegisteredException $e) {
-            //         // Error response (Conflict)
-            //         $this->error(409, [
-            //             'errors' => [
-            //                 'emailRegistered' => 'Email already registered.'
-            //             ]
-            //         ]);
-            //         return false;
-            //     }
+                // Username already registered
+                } catch (UsernameAlreadyRegisteredException $e) {
+                    // Error response (Conflict)
+                    $this->error(409, [
+                        'errors' => [
+                            'usernameRegistered' => 'Username already registered.'
+                        ]
+                    ]);
+                    return false;
 
-            //     // Succesfull response
-            //     $this->success($userService->user);
+                } catch (EmailAlreadyRegisteredException $e) {
+                    // Error response (Conflict)
+                    $this->error(409, [
+                        'errors' => [
+                            'emailRegistered' => 'Email already registered.'
+                        ]
+                    ]);
+                    return false;
+                }
 
-            // } else {
-            //     // Bad Request
-            //     $this->error(400, [
-            //         'errors' => [
-            //             'badRequest' => 'The data in the request is wrong.'
-            //         ]
-            //     ]);
-            // }
+                // Succesfull response
+                $this->success($userService->user);
 
-            // return false;
+            } else {
+                // Bad Request
+                $this->error(400, [
+                    'errors' => [
+                        'badRequest' => 'The data in the request is wrong.'
+                    ]
+                ]);
+            }
+
+            return false;
         }
 
 
         /* =============== Private =============== */
 
-        // Generate the response
+        // Generate the success response
         private function success($user) {
             // Setting status code
             http_response_code(200); // OK

@@ -9,55 +9,59 @@
     class LoginController {
 
         // Action of the controller
-        public function action(/*$request, $userService*/) {
+        public function action($request, $userService) {
 
-            echo "login";
+            // Check if the user is already logged in
+            if ($userService->isLogged()) {
+                $this->success($userService->user);
+                return false;
+            }
 
-            // if ($request->input->has('user') && $request->input->has('password')) {
-            //     // Get the parameters from the request
-            //     $user = $request->input->get('user');
-            //     $password = $request->input->get('password');
+            if ($request->input->has('user') && $request->input->has('password')) {
+                // Get the parameters from the request
+                $user = $request->input->get('user');
+                $password = $request->input->get('password');
 
-            //     try {
-            //         // Try the request
-            //         $status = $userService->login($user, $password);
+                try {
+                    // Try the request
+                    $status = $userService->login($user, $password);
 
-            //     } catch (InvalidArgumentException $e) {
-            //         // Bad Request
-            //         $this->error(400, [
-            //             'errors' => [
-            //                 'badRequest' => 'The data in the request is wrong.'
-            //             ]
-            //         ]);
+                } catch (InvalidArgumentException $e) {
+                    // Bad Request
+                    $this->error(400, [
+                        'errors' => [
+                            'badRequest' => 'The data in the request is wrong.'
+                        ]
+                    ]);
 
-            //         return false;
-            //     }
+                    return false;
+                }
 
-            //     // If the login is successful
-            //     if ($status) {
+                // If the login is successful
+                if ($status) {
 
-            //         // Send the response
-            //         $this->success($userService->user);
+                    // Send the response
+                    $this->success($userService->user);
 
-            //     } else {
-            //         // Unauthorized
-            //         $this->error(401, [
-            //             'errors' => [
-            //                 'badCredentials' => 'Email/Username and password are wrong.'
-            //             ]
-            //         ]);
-            //     }
+                } else {
+                    // Unauthorized
+                    $this->error(401, [
+                        'errors' => [
+                            'badCredentials' => 'Email/Username and password are wrong.'
+                        ]
+                    ]);
+                }
 
-            // } else {
-            //     // Bad Request
-            //     $this->error(400, [
-            //         'errors' => [
-            //             'badRequest' => 'The data in the request is wrong.'
-            //         ]
-            //     ]);
-            // }
+            } else {
+                // Bad Request
+                $this->error(400, [
+                    'errors' => [
+                        'badRequest' => 'The data in the request is wrong.'
+                    ]
+                ]);
+            }
 
-            // return false;
+            return false;
         }
 
 

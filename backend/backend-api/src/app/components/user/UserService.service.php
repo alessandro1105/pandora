@@ -37,8 +37,24 @@
             $this->http = $http; // Http service
             $this->request = $request; // Request service
 
-            // Intialize user
-            $this->user = null;
+            // Check if the user is logged and load his information
+            if ($this->request->session->has('user')) {
+                $user = $this->request->session->get('user', null);
+                // Create user object
+                $this->user = new User($user);
+                // Set that the user is logged
+                $this->isLogged = true;
+
+            // The user is not logged
+            } else {
+                $this->user = null;
+                $this->isLogged = false;
+            }
+        }
+
+        // Return boolean informing if the user is logged
+        public function isLogged() {
+            return $this->isLogged;
         }
 
         // Login the user
@@ -53,55 +69,59 @@
                 throw new InvalidArgumentException('Password is not valid!');
             }
 
-            // Prepare sql statement
-$sql = <<<SQL
-    SELECT uuid, password
-        FROM users
-        WHERE (username = :username OR email = :email) AND activated = TRUE AND deleted = FALSE
-SQL;
-            $stmt = $this->databaseService->prepare($sql);
+            // Try the login
+            $response = $this->http->request(
+                'POST',
+                $this->endpoint . '/login',
+                [
+                    'user' => $user,
+                    'password' => $password
+                ]
+            );
 
-            // Bind parameters
-            $stmt->bindParam(':username', $user, PDO::PARAM_STR); // Username
-            $stmt->bindParam(':email', $user, PDO::PARAM_STR); // Email
+            if ($response->get('status') == 200) {
 
-            // Execute the statement
-            $result = $stmt->execute();
+                // Obtain the data from the response
+                $user = [
+                    'uuid' => $response->get('data.uuid'),
+                    'username' => $response->get('data.username'),
+                    'email' => $response->get('data.email'),
+                    'email_confirmed' => $response->get('data.emailConfirmed'),
+                    'registration_date' => $response->get('data.registrationDate'),
+                    'last_login' => $response->get('data.lastLoginDate')
+                ];
 
-            if ($result) {
+                // Create the user object
+                $this->user = new User($user);
 
-                // Get user data from the database
-                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                // Save the user in the session
+                $this->request->session->put('user', $user);
 
-                // Check if there is a user with that username or email and that the password match
-                if ($user and password_verify($password, $user['password'])) {
-                    // The user exists and the password matches
-                    // Save the user uuid session
-                    $this->uuid = $user['uuid'];
-                    // Create user object
-                    $this->user = new User($this->uuid, $this->databaseService);
+                // Regenerate the session
+                $this->request->session->regenerate();
 
-                    // Set last login of the user
-$sql = <<<SQL
-UPDATE users
-    SET last_login = NOW()
-    WHERE uuid = :uuid
-SQL;
-                    $stmt = $this->databaseService->prepare($sql);
+                // Th user is logged in
+                $this->isLogged = true;
 
-                    // Bind parameters
-                    $stmt->bindParam(':uuid', $this->uuid, PDO::PARAM_STR); // Username
-
-                    // Execute the statement
-                    $result = $stmt->execute();
-
-                    // Successfully login
-                    return true;
-                }
+                return true;
             }
+
 
             // Return erroneous login
             return false;
+        }
+
+
+        // Logout the user
+        public function logout() {
+            // Save the user in the session
+            $this->request->session->forget('user');
+
+            // Regenerate the session
+            $this->request->session->regenerate();
+
+            // Set that the user is not logged
+            $this->isLogged = false;
         }
 
         // Login the user
@@ -117,53 +137,58 @@ SQL;
                 throw new InvalidArgumentException('Password is not valid!');
             }
 
-            // Create the sql statement
-$sql = <<<SQL
-    INSERT INTO users (uuid, username, email, password)
-        VALUES (uuid_generate_v4(), :username, :email, :password)
-SQL;
+            // Try the login
+            $response = $this->http->request(
+                'POST',
+                $this->endpoint . '/signup',
+                [
+                    'username' => $username,
+                    'email' => $email,
+                    'password' => $password
+                ]
+            );
 
-            $stmt = $this->databaseService->prepare($sql);
+            if ($response->get('status') == 200) {
 
-            // Bind data to the statement
-            $stmt->bindParam(':username', $username, PDO::PARAM_STR); //username
-            $stmt->bindParam(':email', $email, PDO::PARAM_STR); //email
-            $stmt->bindValue(':password', password_hash($password, PASSWORD_DEFAULT), PDO::PARAM_STR);
+                // Obtain the data from the response
+                $user = [
+                    'uuid' => $response->get('data.uuid'),
+                    'username' => $response->get('data.username'),
+                    'email' => $response->get('data.email'),
+                    'email_confirmed' => $response->get('data.emailConfirmed'),
+                    'registration_date' => $response->get('data.registrationDate'),
+                    'last_login' => $response->get('data.lastLoginDate')
+                ];
 
-            // Execute the statement
-            $result = $stmt->execute();
+                // Create the user object
+                $this->user = new User($user);
 
-            if ($result) {
-                // Log the user
-                return $this->login($email, $password);
+                // Save the user in the session
+                $this->request->session->put('user', $user);
 
-            } else {
-                // Check if the username is already registered (if not the email is already registered)
-$sql = <<<SQL
-    SELECT COUNT(*) AS username_exists
-        FROM users
-        WHERE username = :username;
-SQL;
-                $stmt = $this->databaseService->prepare($sql);
+                // Regenerate the session
+                $this->request->session->regenerate();
 
-                // Bind data to the statement
-                $stmt->bindParam(':username', $username, PDO::PARAM_STR); //username
+                // Th user is logged in
+                $this->isLogged = true;
 
-                // Execute the statement
-                $result = $stmt->execute();
+                return true;
 
-                // If the query has been succesfully executed
-                if ($result) {
-                    if ($stmt->fetch(PDO::FETCH_ASSOC)['username_exists']) {
-                        throw new UsernameAlreadyRegisteredException('Username already registered!');
-                    } else {
-                        throw new EmailAlreadyRegisteredException('Email already registered!');
-                    }
+            // Response is 409, so the email or the username was already in use
+            } else if ($response->get('status') == 409) {
+
+                // Username already used
+                if ($response->has('data.errors.usernameRegistered')) {
+                    throw new UsernameAlreadyRegisteredException('Username already registered!');
+                } else {
+                    throw new EmailAlreadyRegisteredException('Email already registered!');
                 }
+
             }
 
-        }
+            return false;
 
+        }
 
         public function __get($property) {
             switch ($property) {
@@ -178,7 +203,11 @@ SQL;
 
         // Get user object
         private function getUser() {
-            return $this->user;
+            if ($this->isLogged) {
+                return $this->user;
+            }
+
+            return null;
         }
 
 
