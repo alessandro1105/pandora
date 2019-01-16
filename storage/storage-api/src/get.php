@@ -28,7 +28,7 @@ class GetController
                 $path = util::pathify($_GET['path']); // removing the possible initial / (that surely is present) and final /
 
                 //check on useruuid and on path
-                if( (!isUuid($_GET['user'])) )
+                if( (!util::isUuid($_GET['user'])) )
                     throw new InvalidArgumentException();
 
                 //if necessary activate a connection with the database using the proper function
@@ -38,14 +38,20 @@ class GetController
                 //call the proper function accorting to what it is set
                 if(!isset($_GET['fileName']))
                     echo json_encode(m::list($_GET['user'], $path));
+
+                else if(!util::isFileName($_GET['fileName']))
+                    throw new InvalidArgumentException();
+
+                else if(!isset($_GET['version']) AND isset($_GET['info']))
+                    echo json_encode(m::getAllVersionsData($_GET['user'], $path, $_GET['fileName']));
+
+                else if(!isset($_GET['version']))
+                    self::fileDownloading(m::getFileUuid($_GET['user'], $path, $_GET['fileName'], 0));
+
+                else if(!is_int($_GET['version')) OR ($_GET['version']<0) ) //0 or version non set has the same meaning: take the highest version
+                        throw new InvalidArgumentException();
                 else
-                    if(!isset($_GET['version']))
-                        self::fileDownloading(m::getFileUuid($_GET['user'], $path, $_GET['fileName'], 0));
-                    else
-                        if(!is_int($_GET['version')) OR ($_GET['version']<0) ) //0 or version non set has the same meaning: take the highest version
-                            throw new InvalidArgumentException();
-                        else
-                            self::fileDownloading(m::getFileUuid($_GET['user'], $path, $_GET['fileName'], $_GET['version']));
+                    self::fileDownloading(m::getFileUuid($_GET['user'], $path, $_GET['fileName'], $_GET['version']));
 
                 this->success(200);
 
@@ -53,7 +59,11 @@ class GetController
         }
         catch(InvalidArgumentException $e)
         {
-            $$this->error(400);
+            $this->error(400);
+        }
+        catch(DataNotFoundException $e)
+        {
+            $this->error(400);
         }
     }
 
