@@ -116,6 +116,9 @@ static function list($user, $path)
 
     $last_dir_uuid = self::getLastElementUuid($user, $path);
 
+    if($last_dir_uuid == 'notfound')
+        throw new DataNotFoundException();
+
 $sql = <<<SQL
 SELECT F.file_name, F.is_dir, F.creation_time
     FROM file AS F INNER JOIN has_parent AS H
@@ -161,6 +164,7 @@ static function getLastElementUuid($user, $path)
 }
 
 
+
 static function getRootUuid($user)
 {
 
@@ -185,6 +189,36 @@ SQL;
         return self::makeRootDir($user);
 
 }
+
+
+static function getAllVersionsData($user, $path, $fname)
+{
+    $path = util::pathify($path);
+
+    if(!util::isFileName($fname))
+        throw new InvalidArgumentException();
+
+    $myfile_uuid = getLastElementUuid($user, $path.'/'.$fname);
+
+    if($myfile_uuid == 'notfound')
+        throw new DataNotFoundException();
+
+
+$sql = <<<SQL
+SELECT version_number, creation_time, file_size
+    FROM version
+        WHERE uuid_file = :myfile_uuid
+SQL;
+
+        $stmt = self::getConnection()->prepare($sql);
+
+        $stmt->bindParam(':myfile_uuid', $myfile_uuid, PDO::PARAM_STR, 36);
+
+        return self::doFetchAll($stmt);
+
+}
+
+
 
 static function getChildUuid($parent_uuid, $fname)
 {
@@ -240,6 +274,10 @@ static function getVersionUuid($user, $path, $fileName, $version)
 
     $myfile_uuid = self::getLastElementUuid($user, $completeName);
 
+    if($myfile_uuid == 'notfound')
+        throw new DataNotFoundException();
+
+
     //version==0 has the special meaning of: take the latest version
     if($version===0)
     {
@@ -270,6 +308,8 @@ SQL;
     return self::doFetchAll($stmt);
 
 }
+
+
 
 static function getHighestVersionUuid($myfile_uuid)
 {
@@ -492,6 +532,9 @@ static function makeDir($user, $path, $dir_name)
 
     $parent_uuid = self::getLastElementUuid($user, $path); //if path is empty, it returns the root_uuid (if not present the root, it creates it)
 
+    if($parent_uuid == 'notfound')
+        throw new DataNotFoundException();
+
     $my_dir_uuid = util::uuidV4();
 
 
@@ -516,6 +559,10 @@ static function addVersion($user, $path, $my_file_name, $my_file_version_uuid, $
 
 
     $parent_uuid = self::getLastElementUuid($user, $path); //if path is empty, it returns the root_uuid (if not present the root, it creates it)
+
+    if($parent_uuid == 'notfound')
+        throw new DataNotFoundException();
+
 
     $myfile_uuid = self::getChildUuid($parent_uuid, $my_file_name);
 
@@ -574,8 +621,11 @@ static function moveElement($user, $path, $name, $newpath, $newname)
     //uuid of the file to be renamed and/or moved
     $myfile_uuid = self::getLastElementUuid($user, $path.'/'.$name);
 
+    if($myfile_uuid == 'notfound')
+        throw new DataNotFoundException();
+
     //first of all, check whether an element with the same name already exists in the new path or the element to move doesn't exist
-    if( ( self::getLastElementUuid($user, $newpath.'/'.$newname) != 'notfound' ) OR ($myfile_uuid == 'notfound') )
+    if( ( self::getLastElementUuid($user, $newpath.'/'.$newname) != 'notfound' ) )
         throw new InvalidArgumentException();
 
     try
@@ -600,6 +650,8 @@ static function moveElement($user, $path, $name, $newpath, $newname)
             //getting the uuid of the future parent
             $future_parent_uuid = self::getLastElementUuid($user, $newpath);
 
+            if($future_parent_uuid == 'notfound') //the future parent directory doesn't exist
+                throw new InvalidArgumentException();
 
 
             $stmt = self::getConnection()->prepare("UPDATE has_parent SET uuid_parent = :future_parent_uuid WHERE uuid_child = :myfile_uuid");
@@ -725,7 +777,13 @@ static function removeElement($user, $path, $name, $version)
         self::getConnection()->beginTransaction();
 
         $stack_of_uuid = array();
-        self::removeRecElement($user,  self::getLastElementUuid($user, $path.'/'.$name), $version, &$stack_of_uuid); //passing by reference the stack
+
+        $elemUuid = self::getLastElementUuid($user, $path.'/'.$name);
+
+        if($elemUuid == 'notfound')
+            return; //No Exception, deleting a file that does not exist is ok
+
+        self::removeRecElement($user, $elemUuid, $version, &$stack_of_uuid); //passing by reference the stack
 
         self::getConnection()->commit();
 
@@ -746,9 +804,9 @@ static function removeElement($user, $path, $name, $version)
 
 class DbException extends Exception {  }
 class InvalidArgumentException extends Exception {  }
-
+class DataNotFoundException extends DbException {  }
 
 //THERE ARE SOME INTERNALLY SPECIALIZED EXCEPTION. THEY ARE CONSIDERED DbException FROM THE OUTSIDE
 class ConnectiondbException extends DbException {  }
-class DataNotFoundException extends DbException {  }
+
 class DataAlreadyPresentException extends DbException {  }
