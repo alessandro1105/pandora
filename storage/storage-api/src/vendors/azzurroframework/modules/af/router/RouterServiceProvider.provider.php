@@ -67,7 +67,7 @@
 				throw new InvalidArgumentException("State definition cannot be empty!");
 			}
 			// url
-			if (isset($state['url']) and !preg_match("/^(\/(\:?[a-zA-Z0-9_]+))*(\/|(\/?\?[a-zA-Z0-9_]+(\&[a-zA-Z0-9_]+)*))?$/", $state['url'])) {
+			if (isset($state['url']) and !preg_match("/^(\/((\:|\*)?[a-zA-Z0-9_]+))*(\/|(\/?\?[a-zA-Z0-9_]+(\&[a-zA-Z0-9_]+)*))?$/", $state['url'])) {
 				throw new InvalidArgumentException("'url' must be a valid url path!");
 			}
 			// name

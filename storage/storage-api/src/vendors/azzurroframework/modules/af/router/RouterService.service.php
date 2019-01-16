@@ -350,17 +350,26 @@
 			// Array to contains all the rest parameters
 			$params = array();
 
-			// Check the length of the url exploded, if they are different the urls are different
-			if (count($url1) != count($url2)) {
-				return false;
-			}
+			// // Check the length of the url exploded, if they are different the urls are different
+			// if (count($url1) != count($url2)) {
+			// 	return false;
+			// }
 
 			// Check all the url parts, if one of these is different the urls are different
 			for ($i = 0; $i < count($url1) -1; $i++) {
+				
 				// If url2 is a parameter, save it and continue
 				if (substr_compare($url2[$i], ":", 0, 1) === 0) {
 					$params[substr($url2[$i], 1)] = $url1[$i];
 					continue;
+
+				// Check for wildcard
+				} else if (substr_compare($url2[$i], "*", 0, 1) === 0) {
+					$params[substr($url2[$i], 1)] = array_slice($url1, $i, count($url1) -1 - $i);
+					$params[substr($url2[$i], 1)][] = explode('?', $url1[count($url1) -1])[0];
+
+					$this->current['params'] = $params;
+					return true;
 				}
 
 				// If the two part of the same index are different
