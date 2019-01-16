@@ -32,17 +32,17 @@
 
     <!-- User Module -->
     <script src="app/components/user/user.module.js"></script>
-    <!-- Login Sub Module -->
-    <script src="app/components/user/login/login.module.js"></script>
-    <!-- Signup Sub Module -->
-    <script src="app/components/user/signup/signup.module.js"></script>
+    <!-- User Service -->
+    <script src="app/components/user/user.service.js"></script>
 
 
     <!-- Favicon -->
     <link rel="shortcut icon" href="assets/images/favicon.png" />
 </head>
 
-<body>
+<body ng-controller="mainCtrl as main">
+    
+
     <ui-view></ui-view>
 </body>
 

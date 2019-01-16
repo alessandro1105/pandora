@@ -28,4 +28,10 @@ angular
                 // Transit to error404 state
                 $state.go('error404');
             });
+    })
+
+    .controller('mainCtrl', function () {
+        var vm = this;
+
+
     });
