@@ -1,3 +1,10 @@
+
+DROP DOMAIN IF EXISTS FILENAME_TYPE CASCADE;
+DROP DOMAIN IF EXISTS FILESIZE CASCADE;
+DROP TABLE IF EXISTS file CASCADE;
+DROP TABLE IF EXISTS version CASCADE;
+DROP TABLE IF EXISTS has_parent CASCADE;
+
 -- =============== EXTENSIONS ===============
 
 -- uuid-ossp (UUID generation functions)
@@ -9,8 +16,12 @@ CREATE EXTENSION
     -- FILENAME_TYPE
     -- Cannot check whether a filename contains / (the root has it) so only the nonEmpty check is kept.
     -- The php modules has the / check for a non root file
-    CREATE DOMAIN FILENAME_TYPE AS VARCHAR(255)
-        CHECK (value ~ '/.+/');
+CREATE DOMAIN FILENAME_TYPE AS VARCHAR(255)
+        CHECK (value ~ '^.+$');
+
+
+CREATE DOMAIN FILESIZE AS INT
+        CHECK (value >= 0);
 
 -- =============== TABLES ===============
 
@@ -35,9 +46,9 @@ CREATE TABLE file (
 CREATE TABLE version (
 
     uuid UUID NOT NULL,
-    version_number INT NOT NULL AUTO_INCREMENT,
+    version_number SERIAL,
     creation_time  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-    file_size INT UNSIGNED NOT NULL,
+    file_size FILESIZE NOT NULL,
     uuid_file UUID NOT NULL,
 
     PRIMARY KEY (uuid),
