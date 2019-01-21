@@ -145,7 +145,7 @@ public function getAllVersionsData($user, $path, $fname)
 
 
 
-    $myfile_uuid = getLastElementUuid($user, $path.'/'.$fname);
+    $myfile_uuid = $this->getLastElementUuid($user, $path.'/'.$fname);
 
     if($myfile_uuid == '')
         throw new DataNotFoundException();
@@ -236,7 +236,12 @@ public function getVersionUuid($user, $path, $fileName, $version)
     }
     else
     {
-        return $this->getThisVersionUuid($version, $myfile_uuid);
+        $toPersistent = $this->getThisVersionUuid($version, $myfile_uuid);
+
+        if($toPersistent == '') //illegal version number
+            throw new DataNotFoundException();
+
+        return $toPersistent;
 
     }
 
@@ -748,7 +753,7 @@ SQL;
     $stmt = $this->conn->prepare($sql);
 
     $stmt->bindParam(':myfile_uuid', $myfile_uuid, PDO::PARAM_STR, 36);
-    $stmt->bindParam(':version_number', $myfile_uuid, PDO::PARAM_INT);
+    $stmt->bindParam(':version', $version, PDO::PARAM_INT);
 
     return $this->doFetch($stmt, "uuid");
 }
@@ -896,13 +901,6 @@ private function removeVersion($file_uuid, int $version_number, & $stack)
     $v_uuid=NULL;
 
 
-    if($this->getNumberOfVersionsPresent($file_uuid) == 1) //only one version and soon it will be removed
-    {
-        $this->doDel('file',$file_uuid);
-        $this->doDel('has_parent',$file_uuid);
-    }
-
-
     if($version_number===0)
     {
         $v_uuid = $this->getHighestVersionUuid($file_uuid);
@@ -924,6 +922,14 @@ private function removeVersion($file_uuid, int $version_number, & $stack)
 
 
     array_push($stack, $v_uuid);
+
+
+    if($this->getNumberOfVersionsPresent($file_uuid) == 0) //only one version and soon it will be removed
+    {
+        $this->doDel('has_parent',$file_uuid);
+        $this->doDel('file',$file_uuid);
+
+    }
 }
 
 private function removeAllVersions($file_uuid)
@@ -969,8 +975,9 @@ private function removeRecElement($user, $myelement_uuid, $version, & $stack)
 
     //first I remove all the children of the directory and then the parent directory... so no children without parent are ever present
 
-    $this->doDel('file',$myelement_uuid);
     $this->doDel('has_parent',$myelement_uuid);
+    $this->doDel('file',$myelement_uuid);
+
 
 
     return;

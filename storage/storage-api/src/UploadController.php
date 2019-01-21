@@ -49,6 +49,7 @@ public function action()
                 $ss->makeDir($user, $path, $name);
 
                 $this->success(201);
+                return;
             }
             else
             {
@@ -60,20 +61,20 @@ public function action()
 
                 set_time_limit(0);
                 $length = (int) $_SERVER['CONTENT_LENGTH'];
-                $input = fopen('php://input','r');
-    
+                $GLOBALS['input'] = fopen('php://input','r');
+
                 $c = curl_init();
                 curl_setopt($c, CURLOPT_URL, "http://localhost/persistentService/uploader.php?fileToUpload=".$version_uuid);
                 //curl_setopt($c, CURLOPT_RETURNTRANSFER, true);
                 curl_setopt($c, CURLOPT_PUT, true);
                 curl_setopt($c, CURLOPT_INFILESIZE, $length);
                 curl_setopt($c, CURLOPT_READFUNCTION, function () {
-                   global $input;
-                   return fread($input, 8192);
+                   //global $input;
+                   return fread($GLOBALS['input'], 8192);
                 });
                 curl_exec($c);
                 curl_close($c);
-                fclose($input);
+                fclose($GLOBALS['input']);
 
 
 
@@ -84,13 +85,17 @@ public function action()
                     file_get_contents('http://localhost/persistentService/deleter.php?fileToDelete='.$possible_uuid_toberemoved);
 
                 $this->success(202);
-
+                return;
 
 
             }
 
     }
     catch(InvalidArgumentException $e)
+    {
+        $this->error(400);
+    }
+    catch(DataNotFoundException $d)
     {
         $this->error(400);
     }
