@@ -1,20 +1,22 @@
 <?php
 
 /*
-include_once 'StorageService.php';
-include_once 'StorageServiceUtil.php';
+user, path are mandatory parameters
+
+if directory parameter of the query string is present:
+- a new directory will be created with the name equals to the last part of the path
+
+else
+- a file version of the file indicated in path will be uploaded to persistentService and then inserted into the storage-db
+
 */
-
-//possible parameter in $_GET: user, path, isDir
-//if isDir is not set or false then there is a file (version) to upload to persistentService and to insert into the storage-db
-
 class UploadController
 {
 
 public function action()
 {
 
-    //PARAMETER RETRIEVAL-----------------------------------------------------------
+    //PARAMETER RETRIEVAL-------------------------------------------------------
 
             //parametri
             //presi dall'url (delle risorse) hardcored
@@ -25,7 +27,7 @@ public function action()
 
             $isDir = ( (isset($_GET['directory'])) ? TRUE : NULL);
 
-    //------------------------------------------------------END PARAMETERS RETRIEVAL
+    //--------------------------------------------------END PARAMETERS RETRIEVAL
 
 
             //the object on which the methods will be called
@@ -54,6 +56,18 @@ public function action()
             else
             {
 
+                //NOTE-DO NOT TRASH---------------------------------------------
+                //this check is necessary, otherwise I'll discover too late that the filename is invalid and I've already put it in the persistent
+                //this check will save space on the persistent
+                if($ss->getIfExistsByPath($user, $path.'/'.$name) ===true AND $ss->getIfIsDirByPath($user, $path.'/'.$name) === true)
+                {
+                    //there is already a directory with the same name as the file version I want to insert... ko!
+                    throw new InvalidArgumentException();
+                }
+                //--------------------------------------------------DO NOT TRASH
+
+
+
                 //version uuid (the name of the file physically stored in persistent storage)
                 $version_uuid = StorageServiceUtil::uuidV4();
 
@@ -77,7 +91,6 @@ public function action()
                 fclose($GLOBALS['input']);
 
 
-
                 $possible_uuid_toberemoved = $ss->addVersion($user, $path, $name, $version_uuid, $length);
 
                 //is a legal uuid? If so, I shall remove it from persistent (there are now 11 versions and this one is the oldest)
@@ -95,9 +108,9 @@ public function action()
     {
         $this->error(400);
     }
-    catch(DataNotFoundException $d)
+    catch(DbException $d)
     {
-        $this->error(400);
+        $this->error(500);
     }
 }
 

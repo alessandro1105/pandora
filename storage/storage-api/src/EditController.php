@@ -1,16 +1,16 @@
 <?php
 
-//possible parameter in $_GET:
-//user      (the user uuid)
-//path      (the absolute name of the element, i.e. /path/andName)
-//rename    (cointaining the new name)
-//move      (containing the new path to be placed)
+/*
+//user      (the user uuid) MANDATORY
+//path      (the absolute name of the element, i.e. /path/andName) MANDATORY
+//rename    (cointaining the new name) OPTIONAL NOT EXCLUSIVE WITH MOVE
+//move      (containing the new path to be placed) OPTIONAL NOT EXCLUSIVE WITH RENAME
 //---
 //please pay attention that:
-//moving into a non-existent directory will throw an exception
-//renaming into a file or a directory that already exists will throw an exception (it would be trickier managing the merge of versions)
+//moving into a non-existent directory is not possible
+//renaming into a file or a directory that already exists is not possible (it would be trickier managing the merge of versions)
 //if rename and move are both set, the file will be moved in the move directory with the rename name
-
+*/
 class EditController
 {
 
@@ -62,23 +62,20 @@ class EditController
                 else if($rename != NULL AND $move != NULL)
                     $ss->moveElement($user, $path, $name, $move, $rename);
                 else
-                {
-                    $this->error(400);
-                    return;
-                }
+                    throw new InvalidArgumentException();
+
+
 
                 $this->success(200);
-
-
 
         }
         catch(InvalidArgumentException $e)
         {
             $this->error(400);
         }
-        catch(DataNotFoundException $e)
+        catch(DbException $e)
         {
-            $this->error(400);
+            $this->error(500);
         }
 
     }

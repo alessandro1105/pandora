@@ -48,7 +48,7 @@ public static function dividePathFromLast($path)
     $path = self::pathify($path);
 
     if(strlen($path) == 0 )
-        return ['', NULL]; //the root directory is the path but there is no last element
+        return ['','']; //the root directory is the path but there is no last element
 
 
     //The last directory in the file is the one I need

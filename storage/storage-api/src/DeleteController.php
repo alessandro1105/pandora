@@ -1,10 +1,10 @@
 <?php
 
 
-//possible parameter in $_GET:
 //user      MANDATORY (the user uuid)
 //path      MANDATORY (the absolute name of the element to be removed, i.e. /path/andName)
 //version   if a file, the version to be removed. If a file and not specified, the maximum version will be removed
+
 class DeleteController
 {
 
@@ -60,9 +60,9 @@ class DeleteController
         {
             $this->error(400);
         }
-        catch(DataNotFoundException $e)
+        catch(DbException $e)
         {
-            $this->error(400);
+            $this->error(500);
         }
     }
 
