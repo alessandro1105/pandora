@@ -13,24 +13,31 @@
         // User login state
         $routerProvider
             ->state([ // Login state
-                'name' => 'userLogin',
+                'name' => 'login',
                 'url' => '/user/login',
                 'controller' => 'loginCtrl',
                 'methods' => 'POST'
             ])
 
             ->state([ // Singup state
-                'name' => 'userSignup',
+                'name' => 'signup',
                 'url' => '/user/signup',
                 'controller' => 'signupCtrl',
                 'methods' => 'POST'
             ])
 
             ->state([ // Singup state
-                'name' => 'userLogout',
+                'name' => 'logout',
                 'url' => '/user/logout',
                 'controller' => 'logoutCtrl',
                 'methods' => 'POST'
+            ])
+
+            ->state([ // Singup state
+                'name' => 'logged',
+                'url' => '/user/logged',
+                'controller' => 'loggedCtrl',
+                'methods' => 'GET'
             ]);
     })
 
@@ -42,6 +49,9 @@
 
     // Register the Logout Controller
     ->controller('logoutCtrl', '\App\Components\User\Logout\LogoutController')
+
+    // Register the Logged Controller
+    ->controller('loggedCtrl', '\App\Components\User\Logged\LoggedController')
 
     // Register the User Service
     ->service('userService', '\App\Components\User\UserService');
