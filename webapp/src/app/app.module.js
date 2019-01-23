@@ -9,6 +9,9 @@ angular
         'user' // User Module
     ])
 
+    // API base endpoint
+    .constant('API_BASE', '/api')
+
     .config(function ($urlRouterProvider, $locationProvider, $urlMatcherFactoryProvider) {
         // UI Router non strict mode and case insensitive
         $urlMatcherFactoryProvider.caseInsensitive(true);

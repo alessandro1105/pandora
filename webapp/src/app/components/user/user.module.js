@@ -3,6 +3,16 @@ angular
 
     ])
 
+    // API to log in a user
+    .constant('API_USER_LOGIN', '/user/login')
+    // API to log out a user
+    .constant('API_USER_LOGOUT', '/user/logout')
+    // API to signup a user
+    .constant('API_USER_SIGNUP', '/user/signup')
+    // API to check if a user is logged in
+    .constant('API_USER_LOGGED', '/user/logged')
+
+    // Define the states
     .config(function ($stateProvider, $locationProvider, $urlMatcherFactoryProvider) {
         // UI Router non strict mode and case insensitive
         $urlMatcherFactoryProvider.caseInsensitive(true);
@@ -24,4 +34,4 @@ angular
                 url: '/signup',
                 templateUrl: 'app/components/user/signup/signup.tpl.html'
             });
-    })
+    });
