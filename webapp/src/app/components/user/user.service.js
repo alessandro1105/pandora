@@ -194,36 +194,36 @@ angular
     			}
 
             // Success
-            }).then(function (response) {
-
-                // Resolve the promise
-                promise.resolve();
-
-    		// Error
-            }, function (response) {
-
-                // reject the promise and pass error information
-                promise.reject(response);
-
-            });
+            }).then(
+                function () {
+                    // Resolve the promise
+                    deferred.resolve();
+                // Error
+                }, 
+                function (response) {
+                    // reject the promise and pass error information
+                    deferred.reject(response);
+                }
+            );
             
             // Return the promise
     		return deferred.promise;
         }
 
         // Return a promise that will be resolved if the user is logged in, rejected otherwise
-        function autenticated() {
-            var deferred = $q;
+        function authenticated() {
+            var deferred = $q.defer();
 
-            logged().then(
-                function () {
-                    deferred.resolve();
-                },
-                function () {
-                    deferred.reject();
-                    $state.go('login');
-                }
-            );
+            logged()
+                .then(
+                    function () {
+                        deferred.resolve();
+                    },
+                    function () {
+                        deferred.reject();
+                        $state.go('login');
+                    }
+                );
 
             return deferred.promise;
         }
@@ -234,12 +234,12 @@ angular
             logout: logout,
             logged: logged,
             signup: signup,
-            autenticated: autenticated,
+            authenticated: authenticated,
             get user() {
                 if (isLogged) {
                     return user;
                 }
-                return {}
+                return {};
             },
             get isLogged() {
                 return isLogged;

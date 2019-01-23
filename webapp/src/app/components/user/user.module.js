@@ -26,12 +26,48 @@ angular
             .state({ // Login state
                 name: 'login',
                 url: '/login',
-                templateUrl: 'app/components/user/login/login.tpl.html'
+                templateUrl: 'app/components/user/login/login.tpl.html',
+                resolve: {
+                    autentication: function ($q, UserService) {
+                        var deferred = $q.defer();
+
+                        // Check if the user is not logged in
+                        UserService.authenticated()
+                            .then(
+                                function () {
+                                    deferred.reject();
+                                },
+                                function () {
+                                    deferred.resolve();
+                                }
+                            );
+
+                        return deferred.promise;
+                    }
+                }
             })
 
             .state({ // Sign up state
                 name: 'signup',
                 url: '/signup',
-                templateUrl: 'app/components/user/signup/signup.tpl.html'
+                templateUrl: 'app/components/user/signup/signup.tpl.html',
+                resolve: {
+                    autentication: function ($q, UserService) {
+                        var deferred = $q.defer();
+
+                        // Check if the user is not logged in
+                        UserService.authenticated()
+                            .then(
+                                function () {
+                                    deferred.reject();
+                                },
+                                function () {
+                                    deferred.resolve();
+                                }
+                            );
+
+                        return deferred.promise;
+                    }
+                }
             });
     });

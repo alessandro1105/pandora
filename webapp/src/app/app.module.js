@@ -33,8 +33,22 @@ angular
             });
     })
 
-    .controller('mainCtrl', function () {
+    .controller('mainCtrl', function ($timeout, UserService) {
         var vm = this;
 
+        // set that the content is not loaded
+        vm.appSpinnerVisible = true;
+
+        // When the promise is resolved hide the page loader
+        UserService.logged()
+            .then(
+                function () {},
+                function () {}
+            ).finally(function () {
+                // Hide the page loader after 1 seconds the request
+                $timeout(function () {
+                    vm.appSpinnerVisible = false;
+                }, 1500);
+            });
 
     });

@@ -22,7 +22,7 @@ angular
                 resolve: {
                     // Check if the user is allowed to access this type of pages
                     autentication: function (UserService) {
-                        return UserService.autenticated(); // Check if the user is autenticated
+                        UserService.authenticated(); // Check if the user is autenticated
                     }
                 }
             });
