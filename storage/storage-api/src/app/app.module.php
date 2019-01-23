@@ -11,9 +11,15 @@
 	// Application main module
 	$azzurro
 		->app("app", [
-
+			'storage'
 		])
 
-		->run(function () {
-			echo "AzzurroFramework runned!";
+		// Config the module
+		->config(function ($routerProvider) {
+
+			// Create simple 404 handler
+			$routerProvider
+				->otherwise(function () {
+					http_response_code(404);
+				});
 		});
