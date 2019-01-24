@@ -30,7 +30,7 @@
                     // Bad Request
                     $this->error(400, [
                         'errors' => [
-                            'badRequest' => 'The data in the request is wrong.'
+                            'badCredentials' => 'Email/Username and password are wrong.'
                         ]
                     ]);
 
