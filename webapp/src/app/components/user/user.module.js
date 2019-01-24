@@ -27,8 +27,10 @@ angular
                 name: 'login',
                 url: '/login',
                 templateUrl: 'app/components/user/login/login.tpl.html',
+                controller: 'loginCtrl',
+                controllerAs: 'login',
                 resolve: {
-                    autentication: function ($q, UserService) {
+                    autentication: function ($q, $state, UserService) {
                         var deferred = $q.defer();
 
                         // Check if the user is not logged in
@@ -36,6 +38,7 @@ angular
                             .then(
                                 function () {
                                     deferred.reject();
+                                    $state.go('listing');
                                 },
                                 function () {
                                     deferred.resolve();
@@ -52,7 +55,7 @@ angular
                 url: '/signup',
                 templateUrl: 'app/components/user/signup/signup.tpl.html',
                 resolve: {
-                    autentication: function ($q, UserService) {
+                    autentication: function ($q, $state, UserService) {
                         var deferred = $q.defer();
 
                         // Check if the user is not logged in
@@ -60,6 +63,7 @@ angular
                             .then(
                                 function () {
                                     deferred.reject();
+                                    $state.go('listing');
                                 },
                                 function () {
                                     deferred.resolve();
