@@ -6,7 +6,9 @@ angular
         'page', // Page Module
         'listing', // Homepage Module
         'error404', // Error 404 Module
-        'user' // User Module
+        'user', // User Module
+
+        'loading-spinner' // Loading Spinner Module
     ])
 
     // API base endpoint
@@ -23,7 +25,7 @@ angular
         // Automatically redirect to homepage at startup
         $urlRouterProvider
             .when('/', function ($state) {
-                $state.go('homepage');
+                $state.go('listing');
             })
             .otherwise(function ($injector) {
                 // Get $state service from $injector
@@ -37,7 +39,7 @@ angular
         var vm = this;
 
         // set that the content is not loaded
-        vm.appSpinnerVisible = true;
+        vm.spinnerVisible = true;
 
         // When the promise is resolved hide the page loader
         UserService.logged()
@@ -47,8 +49,8 @@ angular
             ).finally(function () {
                 // Hide the page loader after 1 seconds the request
                 $timeout(function () {
-                    vm.appSpinnerVisible = false;
-                }, 1500);
+                    vm.spinnerVisible = false;
+                }, 1000);
             });
 
     });
