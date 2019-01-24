@@ -87,6 +87,7 @@
 @import "mixins/cards";
 @import "mixins/misc";
 @import "mixins/text";
+@import "mixins/alerts";
 /*-------------------------------------------------------------------*/
 
 /* === Core Styles === */
@@ -120,6 +121,7 @@
 @import "components/preview";
 @import "components/tables";
 @import "components/loading-spinner";
+@import "components/alerts";
 /*-------------------------------------------------------------------*/
 
 /* === Landing screens === */

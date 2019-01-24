@@ -1,14 +1,18 @@
 angular
     .module('pandora', [
+        // Vendors
         'ui.router', // UI Router
         'ui.bootstrap', // UI Bootstrap
 
+        // Components
         'page', // Page Module
         'listing', // Homepage Module
         'error404', // Error 404 Module
         'user', // User Module
 
-        'loading-spinner' // Loading Spinner Module
+        // Commons
+        'loading-spinner', // Loading Spinner Module
+        'alert' // Alert Module
     ])
 
     // API base endpoint

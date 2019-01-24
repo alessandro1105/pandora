@@ -1,0 +1,8 @@
+// Mixin to create an alert variant
+@mixin alert-variant($color, $background-color) {
+    background: $background-color;
+
+    .alert-message {
+        color: $color;
+    }
+}
