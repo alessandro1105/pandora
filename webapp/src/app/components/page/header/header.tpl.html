@@ -10,11 +10,11 @@
     <ul class="navbar-nav navbar-nav-right">
         <li class="nav-item dropdown d-none d-xl-inline-block" uib-dropdown>
             <a class="nav-link dropdown-toggle" id="UserDropdown" href="#" data-toggle="dropdown" aria-expanded="false" uib-dropdown-toggle>
-                <span class="profile-text">Richard V.Welsh</span>
-                <img class="img-xs rounded-circle" src="assets/images/faces/face1.jpg" alt="Profile image">
+                <span class="profile-text">{{page.user.username}}</span>
+                <img class="img-xs rounded-circle" src="{{page.gravar(page.user.email, 37)}}" alt="Profile image">
             </a>
             <div class="dropdown-menu dropdown-menu-right navbar-dropdown" aria-labelledby="UserDropdown" uib-dropdown-menu>
-                <a class="dropdown-item">
+                <a href="#" class="dropdown-item" ng-click="page.logout()">
                     Sign Out
                 </a>
             </div>
