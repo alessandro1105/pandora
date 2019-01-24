@@ -195,7 +195,13 @@ angular
 
             // Success
             }).then(
-                function () {
+                function (response) {
+                    // Saving the success login status
+                    isUserLogged = true;
+
+                    // Create a new user object
+                    user = User(response.data);
+
                     // Resolve the promise
                     deferred.resolve();
                 // Error
@@ -236,13 +242,13 @@ angular
             signup: signup,
             authenticated: authenticated,
             get user() {
-                if (isLogged) {
+                if (isUserLogged) {
                     return user;
                 }
                 return {};
             },
             get isLogged() {
-                return isLogged;
+                return isUserLogged;
             }
         }
 

@@ -34,7 +34,7 @@ angular
                         var deferred = $q.defer();
 
                         // Check if the user is not logged in
-                        UserService.authenticated()
+                        UserService.logged()
                             .then(
                                 function () {
                                     deferred.reject();
@@ -54,12 +54,14 @@ angular
                 name: 'signup',
                 url: '/signup',
                 templateUrl: 'app/components/user/signup/signup.tpl.html',
+                controller: 'signupCtrl',
+                controllerAs: 'signup',
                 resolve: {
                     autentication: function ($q, $state, UserService) {
                         var deferred = $q.defer();
 
                         // Check if the user is not logged in
-                        UserService.authenticated()
+                        UserService.logged()
                             .then(
                                 function () {
                                     deferred.reject();
