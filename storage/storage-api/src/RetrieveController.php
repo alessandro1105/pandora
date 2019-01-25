@@ -49,7 +49,7 @@ class RetrieveController
             if($ss->getIfIsDirByPath($user, $path)) //also $path='' will do (considered as the root directory)
             {
                 if($version!=NULL OR $info!=NULL) //cannot do any of them if I've a directory
-                    throw new InvalidArgumentException();
+                    throw new DataNotFoundException();
 
                 //if it is a directory, then the only op allowed here is listing the content
                 echo json_encode($ss->list($user, $path));
@@ -72,7 +72,6 @@ class RetrieveController
                     echo json_encode($ss->getAllVersionsData($user, $startingPath, $element));
 
                     $this->success(200);
-                    return;
                 }
                 else
                 {
@@ -101,7 +100,6 @@ class RetrieveController
 
 
                     $this->success(200);
-                    return;
 
                 }
 
@@ -117,6 +115,14 @@ class RetrieveController
         catch(DbException $e)
         {
             $this->error(500);
+        }
+        catch(DataNotFoundException $f)
+        {
+            $this->error(404);
+        }
+        catch(ConflictException $c)
+        {
+            $this->error(409);
         }
 
     }

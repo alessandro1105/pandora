@@ -3,7 +3,6 @@
 
 /*
 * This class contains every (and only) utilities to connect and perform queries to the storage-db
-
 */
 class StorageService
 {
@@ -38,6 +37,7 @@ class StorageService
 /*
 * fetching a single row result from a query to storage-db
 * return a string with the result
+* this function implies automatic exception conversions (PDOException->DbException) for ALL the select statement in this file
 */
 private function doFetch($stmt, $colName)
 {
@@ -51,7 +51,7 @@ private function doFetch($stmt, $colName)
         }
         catch(PDOException $e)
         {
-            throw new DbException("Error from pdo: ". $e->getMessage());
+            throw new DbException($e->getMessage());
         }
 
         return $result[$colName];
@@ -74,7 +74,7 @@ private function doFetchAll($stmt)
     }
     catch(PDOException $e)
     {
-        throw new DbException("Error from pdo: ". $e->getMessage());
+        throw new DbException($e->getMessage());
     }
 
     return $result;
@@ -100,15 +100,15 @@ public function list($user, $path)
 
     //CHECK SECTION-------------------------------------------------------------
 
-    if(!preg_match('/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i', $user))
-        throw new InvalidArgumentException();
+        if(!preg_match('/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i', $user))
+            throw new InvalidArgumentException();
 
-    $path = StorageServiceUtil::pathify($path);
+        $path = StorageServiceUtil::pathify($path);
 
-    $last_dir_uuid = $this->getLastElementUuid($user, $path);
+        $last_dir_uuid = $this->getLastElementUuid($user, $path);
 
-    if($last_dir_uuid == '')
-        throw new InvalidArgumentException();
+        if($last_dir_uuid == '')
+            throw new DataNotFoundException();
 
     //---------------------------------------------------------END CHECK SECTION
 
@@ -120,36 +120,39 @@ SELECT F.file_name, F.is_dir, F.creation_time
         WHERE H.uuid_parent = :last_dir_uuid
 SQL;
 
-    $stmt = $this->conn->prepare($sql);
 
-    $stmt->bindParam(':last_dir_uuid', $last_dir_uuid, PDO::PARAM_STR, 36);
 
-    return $this->doFetchAll($stmt);
+        $stmt = $this->conn->prepare($sql);
+
+        $stmt->bindParam(':last_dir_uuid', $last_dir_uuid, PDO::PARAM_STR, 36);
+
+        return $this->doFetchAll($stmt);
+
 
 }
 
 public function getAllVersionsData($user, $path, $fname)
 {
 
-    //CHECK SECTION-------------------------------------------------------------
+        //CHECK SECTION-------------------------------------------------------------
 
-    if(!preg_match('/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i', $user))
-        throw new InvalidArgumentException();
+        if(!preg_match('/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i', $user))
+            throw new InvalidArgumentException();
 
-    $path = StorageServiceUtil::pathify($path);
+        $path = StorageServiceUtil::pathify($path);
 
-    if( (strpos($fname, '/') === true) OR ($fname == '') OR (strlen($fname) > 255))
-        throw new InvalidArgumentException();
+        if( (strpos($fname, '/') === true) OR ($fname == '') OR (strlen($fname) > 255))
+            throw new InvalidArgumentException();
 
-    $myfile_uuid = $this->getLastElementUuid($user, $path.'/'.$fname);
+        $myfile_uuid = $this->getLastElementUuid($user, $path.'/'.$fname);
 
-    if($myfile_uuid == '')
-        throw new InvalidArgumentException();
+        if($myfile_uuid == '')
+            throw new DataNotFoundException();
 
-    if($this->getIfIsDir($myfile_uuid))
-        throw new InvalidArgumentException();
+        if($this->getIfIsDir($myfile_uuid))
+            throw new DataNotFoundException();
 
-    //---------------------------------------------------------END CHECK SECTION
+        //---------------------------------------------------------END CHECK SECTION
 
 
 $sql = <<<SQL
@@ -170,104 +173,108 @@ SQL;
 public function getIfIsDirByPath($user, $path)
 {
 
-    //CHECK SECTION-------------------------------------------------------------
+        //CHECK SECTION-------------------------------------------------------------
 
-    if(!preg_match('/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i', $user))
-        throw new InvalidArgumentException();
+        if(!preg_match('/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i', $user))
+            throw new InvalidArgumentException();
 
-    $path = StorageServiceUtil::pathify($path);
+        $path = StorageServiceUtil::pathify($path);
 
-    if(!$this->getIfExistsByPath($user, $path))
-        throw new InvalidArgumentException(); //not a file nor a dir: it doesn't exists!!!
+        $myfile_uuid = $this->getLastElementUuid($user, $path);
 
-    $myfile_uuid = $this->getLastElementUuid($user, $path);
+        if($myfile_uuid == '')
+            throw new DataNotFoundException();
 
-    if($myfile_uuid == '')
-        throw new InvalidArgumentException();
-
-    //---------------------------------------------------------END CHECK SECTION
+        //---------------------------------------------------------END CHECK SECTION
 
 
-    return $this->getIfIsDir($myfile_uuid);
+        return $this->getIfIsDir($myfile_uuid);
 
 }
 
 public function getIfExistsByPath($user, $path)
 {
 
-    //CHECK SECTION-------------------------------------------------------------
+        //CHECK SECTION-------------------------------------------------------------
 
-    if(!preg_match('/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i', $user))
-        throw new InvalidArgumentException();
+        if(!preg_match('/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i', $user))
+            throw new InvalidArgumentException();
 
-    $path = StorageServiceUtil::pathify($path);
+        $path = StorageServiceUtil::pathify($path);
 
-    //---------------------------------------------------------END CHECK SECTION
+        //---------------------------------------------------------END CHECK SECTION
 
-    $myfile_uuid = $this->getLastElementUuid($user, $path);
+        $myfile_uuid = $this->getLastElementUuid($user, $path);
 
-    if($myfile_uuid == '')
-        return false;
+        if($myfile_uuid == '')
+            return false;
 
-    return true;
+        return true;
 }
 
 
 public function getVersionUuid($user, $path, $fileName, $version)
 {
 
-    //CHECK SECTION-------------------------------------------------------------
 
-    if(!preg_match('/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i', $user))
-        throw new InvalidArgumentException();
+        //CHECK SECTION-------------------------------------------------------------
 
-    $path = StorageServiceUtil::pathify($path);
-
-    if( (strpos($fileName, '/') === true) OR ($fileName == '') OR (strlen($fileName) > 255))
-        throw new InvalidArgumentException();
-
-
-    if(!is_numeric($version)) //necessary, otherwise the cast from a non numeric string to int will return 0 (=max version)
-        throw new InvalidArgumentException();
-
-    $version = (int) $version;
-
-
-    if($version < 0) //version ==0 : take the highest version, legit value
-        throw new InvalidArgumentException();
-
-
-    $completeName = $path.'/'.$fileName;
-
-    $myfile_uuid = $this->getLastElementUuid($user, $completeName);
-
-    if($myfile_uuid == '')
-        throw new InvalidArgumentException();
-
-    //---------------------------------------------------------END CHECK SECTION
-
-
-
-    //version==0 has the special meaning of: take the latest version
-    if($version===0)
-    {
-
-        return $this->getHighestVersionUuid($myfile_uuid);
-
-    }
-    else
-    {
-        //the name of the physical file that is present in the persistent
-        $toPersistent = $this->getThisVersionUuid($version, $myfile_uuid);
-
-        if($toPersistent == '') //illegal version number
+        if(!preg_match('/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i', $user))
             throw new InvalidArgumentException();
 
-        return $toPersistent;
+        $path = StorageServiceUtil::pathify($path);
 
-    }
+        if( (strpos($fileName, '/') === true) OR ($fileName == '') OR (strlen($fileName) > 255))
+            throw new InvalidArgumentException();
+
+
+        if(!is_numeric($version)) //necessary, otherwise the cast from a non numeric string to int will return 0 (=max version)
+            throw new InvalidArgumentException();
+
+        $version = (int) $version;
+
+
+        if($version < 0) //version ==0 : take the highest version, legit value
+            throw new InvalidArgumentException();
+
+
+        $completeName = $path.'/'.$fileName;
+
+        $myfile_uuid = $this->getLastElementUuid($user, $completeName);
+
+        if($myfile_uuid == '')
+            throw new DataNotFoundException();
+
+        //---------------------------------------------------------END CHECK SECTION
+
+
+
+        //version==0 has the special meaning of: take the latest version
+        if($version===0)
+        {
+
+            return $this->getHighestVersionUuid($myfile_uuid);
+
+        }
+        else
+        {
+            //the name of the physical file that is present in the persistent
+            $toPersistent = $this->getThisVersionUuid($version, $myfile_uuid);
+
+            if($toPersistent == '') //illegal version number
+                throw new DataNotFoundException();
+
+            return $toPersistent;
+
+        }
 
 }
+
+
+
+
+
+
 
 
 
@@ -300,9 +307,11 @@ public function makeDir($user, $path, $dir_name)
 
     $parent_uuid = $this->getLastElementUuid($user, $path); //if path is empty, it returns the root_uuid (if not present the root, it creates it)
 
+    if($this->getLastElementUuid($user, $path.'/'.$dir_name) != '') //in this path already exists an element with the same name of the future dir
+        throw new ConflictException();
 
     if($parent_uuid == '' OR !$this->getIfIsDir($parent_uuid)) //parent not found or last element is not a directory
-        throw new InvalidArgumentException();
+        throw new DataNotFoundException();
 
 
     //---------------------------------------------------------END CHECK SECTION
@@ -352,7 +361,7 @@ public function addVersion($user, $path, $my_file_name, $my_file_version_uuid, $
     $parent_uuid = $this->getLastElementUuid($user, $path); //if path is empty, it returns the root_uuid (if not present the root, it creates it)
 
     if($parent_uuid == '' OR !$this->getIfIsDir($parent_uuid)) //if the future parent does not exist OR is not a directory, ko
-        throw new InvalidArgumentException();
+        throw new DataNotFoundException();
 
     //---------------------------------------------------------END CHECK SECTION
 
@@ -365,8 +374,9 @@ public function addVersion($user, $path, $my_file_name, $my_file_version_uuid, $
     {
 
         if($this->getIfIsDir($myfile_uuid)) //there is a directory with the same name of the file I want to insert....
-            throw new InvalidArgumentException();
-
+        {
+            throw new ConflictException();
+        }
 
         //...it's a file!!
 
@@ -392,6 +402,7 @@ public function addVersion($user, $path, $my_file_name, $my_file_version_uuid, $
         $this->doInsInFile($parent_uuid, [$newfile_uuid, $my_file_name, $user, FALSE]);
         $this->doIns('version', [$my_file_version_uuid, $size, $newfile_uuid]);
         $this->doIns('has_parent', [$newfile_uuid, $parent_uuid]);
+
     }
 
     return $uuid_toberemoved; //empty string or uuid
@@ -402,37 +413,37 @@ public function addVersion($user, $path, $my_file_name, $my_file_version_uuid, $
 public function moveElement($user, $path, $name, $newpath, $newname)
 {
 
-    //CHECK SECTION-------------------------------------------------------------
+        //CHECK SECTION-------------------------------------------------------------
 
-    if(!preg_match('/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i', $user))
-        throw new InvalidArgumentException();
+        if(!preg_match('/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i', $user))
+            throw new InvalidArgumentException();
 
-    $path = StorageServiceUtil::pathify($path);
+        $path = StorageServiceUtil::pathify($path);
 
-    if(($name==$newname) AND ($path==$newpath))
-        return; //no business here to be done...
+        if(($name==$newname) AND ($path==$newpath))
+            return; //no business here to be done...
 
-    if( (strpos($name, '/') === true) OR ($name == '') OR (strlen($name) > 255))
-        throw new InvalidArgumentException();
+        if( (strpos($name, '/') === true) OR ($name == '') OR (strlen($name) > 255))
+            throw new InvalidArgumentException();
 
-    $newpath = StorageServiceUtil::pathify($newpath);
+        $newpath = StorageServiceUtil::pathify($newpath);
 
-    if( (strpos($newname, '/') === true) OR ($newname == '') OR (strlen($newname) > 255))
-        throw new InvalidArgumentException();
+        if( (strpos($newname, '/') === true) OR ($newname == '') OR (strlen($newname) > 255))
+            throw new InvalidArgumentException();
 
-    //uuid of the file to be renamed and/or moved
-    $myfile_uuid = $this->getLastElementUuid($user, $path.'/'.$name);
+        //uuid of the file to be renamed and/or moved
+        $myfile_uuid = $this->getLastElementUuid($user, $path.'/'.$name);
 
-    if($myfile_uuid == '') //element not found...
-        throw new InvalidArgumentException();
-
-
-    //check whether an element with the same name already exists in the new path or the element to move doesn't exist
-    if($this->getLastElementUuid($user, $newpath.'/'.$newname) != '')
-        throw new InvalidArgumentException();
+        if($myfile_uuid == '') //element not found...
+            throw new DataNotFoundException();
 
 
-    //---------------------------------------------------------END CHECK SECTION
+        //check whether an element with the same name already exists in the new path or the element to move doesn't exist
+        if($this->getLastElementUuid($user, $newpath.'/'.$newname) != '')
+            throw new ConflictException();
+
+
+        //---------------------------------------------------------END CHECK SECTION
 
 
     try
@@ -458,7 +469,7 @@ public function moveElement($user, $path, $name, $newpath, $newname)
             $future_parent_uuid = $this->getLastElementUuid($user, $newpath);
 
             if($future_parent_uuid == '') //the future parent directory doesn't exist
-                throw new InvalidArgumentException();
+                throw new DataNotFoundException();
 
 
             $stmt = $this->conn->prepare("UPDATE has_parent SET uuid_parent = :future_parent_uuid WHERE uuid_child = :myfile_uuid");
@@ -476,10 +487,25 @@ public function moveElement($user, $path, $name, $newpath, $newname)
         $this->conn->rollBack();
         throw new DbException($e->getMessage());
     }
+    catch(DbException $d) //catching and throwing back again: if any, I need to rollback all the deleted data in the db
+    {
+        $this->conn->rollBack();
+        throw new DbException($e->getMessage());
+    }
     catch(InvalidArgumentException $i)
     {
         $this->conn->rollBack();
         throw new InvalidArgumentException();
+    }
+    catch(DataNotFoundException $f)
+    {
+        $this->conn->rollBack();
+        throw new DataNotFoundException();
+    }
+    catch(ConflictException $c)
+    {
+        $this->conn->rollBack();
+        throw new ConflictException();
     }
 
 }
@@ -526,26 +552,36 @@ public function removeElement($user, $path, $name, $version)
 
         $version = (int) $version;
 
-
         if($version < 0) //version ==0 : take the highest version, legit value
             throw new InvalidArgumentException();
+
     }
 
+
+    $elemUuid = $this->getLastElementUuid($user, $path.'/'.$name);
+
+    if($elemUuid == '')
+        throw new NoContentException();
+
+    //just delete one version if it's a file
+    if(!$this->getIfIsDir($elemUuid) )
+    {
+        if($version == NULL)
+            $version = 0;
+
+        if($this->getThisVersionUuid($version,$elemUuid) == '')
+            throw new NoContentException();
+    }
     //---------------------------------------------------------END CHECK SECTION
 
 
 
     try
     {
+
         $this->conn->beginTransaction();
 
         $stack_of_uuid = array();
-
-        $elemUuid = $this->getLastElementUuid($user, $path.'/'.$name);
-
-        if($elemUuid == '')
-            return; //No Exception, deleting a file that does not exist is ok
-
 
         $this->removeRecElement($user, $elemUuid, $version, $stack_of_uuid); //passing by reference the stack
 
@@ -558,10 +594,25 @@ public function removeElement($user, $path, $name, $version)
         $this->conn->rollBack();
         throw new DbException($e->getMessage());
     }
+    catch(DbException $d) //catching and throwing back again: if any, I need to rollback all the deleted data in the db
+    {
+        $this->conn->rollBack();
+        throw new DbException($e->getMessage());
+    }
     catch(InvalidArgumentException $i)
     {
         $this->conn->rollBack();
         throw new InvalidArgumentException();
+    }
+    catch(DataNotFoundException $f)
+    {
+        $this->conn->rollBack();
+        throw new DataNotFoundException();
+    }
+    catch(ConflictException $c)
+    {
+        $this->conn->rollBack();
+        throw new ConflictException();
     }
 
 }
@@ -581,6 +632,11 @@ public function removeElement($user, $path, $name, $version)
 
 
 
+
+
+
+
+//GET PRIVATE FUNCTIONS---------------------------------------------------------
 
 
 /*
@@ -686,7 +742,7 @@ SQL;
 private function getChildrenUuid($parent_uuid)
 {
     if(!$this->getIfIsDir($parent_uuid))
-        throw new InvalidArgumentException();
+        throw new DataNotFoundException();
 
 $sql = <<<SQL
     SELECT F.uuid
@@ -814,12 +870,19 @@ SQL;
 
 
 
+//--------------------------------------------------END OF GET PRIVATE FUNCTIONS
 
 
 
 
 
 
+
+
+
+
+
+//DO INS PRIVATE FUNCTIONS------------------------------------------------------
 
 /*
 * $this->conn         is the connection (hopefully opened) to communicate with storage-db
@@ -831,18 +894,25 @@ SQL;
 private function doInsInFile($parent_uuid, $arr)
 {
     if($this->getChildUuid($parent_uuid, $arr[1]) != '')
-        throw new InvalidArgumentException(); //cannot insert a file if it's already present a file in the same directory with the same name
+        throw new ConflictException(); //cannot insert a file if it's already present a file in the same directory with the same name
 
     $in_file = "INSERT INTO file (uuid, file_name, user_uuid, is_dir) VALUES (:uuid, :file_name, :user_uuid, :is_dir)";
 
-    $stmt= $this->conn->prepare($in_file);
+    try
+    {
+        $stmt= $this->conn->prepare($in_file);
 
-    $stmt->bindParam(':uuid', $arr[0], PDO::PARAM_STR, 36);
-    $stmt->bindParam(':file_name',  $arr[1], PDO::PARAM_STR, 255);
-    $stmt->bindParam(':user_uuid',  $arr[2], PDO::PARAM_STR, 36);
-    $stmt->bindParam(':is_dir',  $arr[3], PDO::PARAM_BOOL);
+        $stmt->bindParam(':uuid', $arr[0], PDO::PARAM_STR, 36);
+        $stmt->bindParam(':file_name',  $arr[1], PDO::PARAM_STR, 255);
+        $stmt->bindParam(':user_uuid',  $arr[2], PDO::PARAM_STR, 36);
+        $stmt->bindParam(':is_dir',  $arr[3], PDO::PARAM_BOOL);
 
-    $stmt->execute();
+        $stmt->execute();
+    }
+    catch(PDOException $e)
+    {
+        throw new DbException($e->getMessage());
+    }
 }
 
 
@@ -861,39 +931,56 @@ private function doIns($table, $arr)
     $sql=''; // no exception is thrown, it's just an internal error that should never happen
 
 
-    if($table == 'has_parent')
+    try
     {
-        $stmt= $this->conn->prepare($in_has_parent);
 
-        $stmt->bindParam(':uuid_child', $arr[0], PDO::PARAM_STR, 36);
-        $stmt->bindParam(':uuid_parent',  $arr[1], PDO::PARAM_STR, 36);
+        if($table == 'has_parent')
+        {
+            $stmt= $this->conn->prepare($in_has_parent);
 
-        $sql=$table;
+            $stmt->bindParam(':uuid_child', $arr[0], PDO::PARAM_STR, 36);
+            $stmt->bindParam(':uuid_parent',  $arr[1], PDO::PARAM_STR, 36);
 
+            $sql=$table;
+
+        }
+        else if($table == 'version')
+        {
+            $stmt= $this->conn->prepare($in_version);
+
+            $stmt->bindParam(':uuid', $arr[0], PDO::PARAM_STR, 36);
+            $stmt->bindParam(':file_size',  $arr[1], PDO::PARAM_INT);
+            $stmt->bindParam(':uuid_file',  $arr[2], PDO::PARAM_STR, 36);
+
+            $sql=$table;
+        }
+
+        if($sql == '')
+        {
+            return;
+        }
+
+        $stmt->execute();
     }
-    else if($table == 'version')
+    catch(PDOException $e)
     {
-        $stmt= $this->conn->prepare($in_version);
-
-        $stmt->bindParam(':uuid', $arr[0], PDO::PARAM_STR, 36);
-        $stmt->bindParam(':file_size',  $arr[1], PDO::PARAM_INT);
-        $stmt->bindParam(':uuid_file',  $arr[2], PDO::PARAM_STR, 36);
-
-        $sql=$table;
+        throw new DbException($e->getMessage());
     }
-
-    if($sql == '')
-    {
-        return;
-    }
-
-    $stmt->execute();
 }
+
+
+//--------------------------------------------------END DO INS PRIVATE FUNCTIONS
+
+
+
+
+
 
 
 
 private function doDel($table, $uuid)
 {
+
     $del_file = "DELETE FROM file WHERE uuid = :uuid";
     $del_version = "DELETE FROM version WHERE uuid = :uuid";
     $del_has_parent = "DELETE FROM has_parent WHERE uuid_child = :uuid";
@@ -912,11 +999,19 @@ private function doDel($table, $uuid)
     if($sql == '')
         return;
 
-    $stmt = $this->conn->prepare($sql);
 
-    $stmt->bindParam(':uuid', $uuid, PDO::PARAM_STR, 36);
+    try
+    {
+        $stmt = $this->conn->prepare($sql);
 
-    $stmt->execute();
+        $stmt->bindParam(':uuid', $uuid, PDO::PARAM_STR, 36);
+
+        $stmt->execute();
+    }
+    catch(PDOException $e)
+    {
+        throw new DbException($e->getMessage());
+    }
 
 
 }
@@ -935,25 +1030,10 @@ private function removeVersion($file_uuid, int $version_number, & $stack)
 {
     $v_uuid=NULL;
 
-
-    if($version_number===0)
-    {
-        $v_uuid = $this->getHighestVersionUuid($file_uuid);
-
-        $this->doDel('version',$v_uuid);
-
-    }
-    else
-    {
-        $v_uuid = $this->getThisVersionUuid($version_number, $file_uuid);
+    $v_uuid = ($version_number===0) ? $this->getHighestVersionUuid($file_uuid) : $this->getThisVersionUuid($version_number, $file_uuid);
 
 
-        $stmt = $this->conn->prepare("DELETE FROM version WHERE uuid = :v_uuid");
-
-        $stmt->bindParam(':v_uuid', $v_uuid, PDO::PARAM_STR, 36);
-
-        $stmt->execute();
-    }
+    $this->doDel('version',$v_uuid);
 
 
     array_push($stack, $v_uuid);
@@ -963,17 +1043,24 @@ private function removeVersion($file_uuid, int $version_number, & $stack)
     {
         $this->doDel('has_parent',$file_uuid);
         $this->doDel('file',$file_uuid);
-
     }
 }
 
 private function removeAllVersions($file_uuid)
 {
-    $stmt = $this->conn->prepare("DELETE FROM version WHERE uuid_file = :file_uuid");
+    try
+    {
+        $stmt = $this->conn->prepare("DELETE FROM version WHERE uuid_file = :file_uuid");
 
-    $stmt->bindParam(':file_uuid', $file_uuid, PDO::PARAM_STR, 36);
+        $stmt->bindParam(':file_uuid', $file_uuid, PDO::PARAM_STR, 36);
 
-    $stmt->execute();
+        $stmt->execute();
+    }
+    catch(PDOException $e)
+    {
+        throw new DbException($e->getMessage());
+    }
+
 
     $this->doDel('has_parent',$file_uuid);
     $this->doDel('file',$file_uuid);
@@ -985,7 +1072,6 @@ private function removeRecElement($user, $myelement_uuid, $version, & $stack)
     //base cases
     if(is_int($version)) //i'm dealing with one version... neat!
     {
-
         return $this->removeVersion($myelement_uuid, $version, $stack);
     }
 
@@ -1005,10 +1091,12 @@ private function removeRecElement($user, $myelement_uuid, $version, & $stack)
     $children_uuid = $this->getChildrenUuid($myelement_uuid);
 
     if(!($children_uuid == ''))
+    {
         foreach($children_uuid as $child_uuid)
         {
             $this->removeRecElement($user, $child_uuid['uuid'], NULL, $stack);
         }
+    }
 
     //first I remove all the children of the directory and then the parent directory... so no children without parent are ever present
 
@@ -1027,3 +1115,6 @@ private function removeRecElement($user, $myelement_uuid, $version, & $stack)
 
 
 class DbException extends Exception {  }
+class DataNotFoundException extends Exception {  }
+class ConflictException extends Exception {  }
+class NoContentException extends Exception {   }

@@ -5,7 +5,7 @@
 //path      MANDATORY (the absolute name of the element to be removed, i.e. /path/andName)
 //version   if a file, the version to be removed. If a file and not specified, the maximum version will be removed
 //behaviour: if the version number, the path or the filename does not respect the general rules, it's InvalidArgumentException
-// if the file version, or the path, or the user, or the directory doesn't exist, it is returned 200, as it is sucessfully eliminated
+
 class DeleteController
 {
 
@@ -46,6 +46,8 @@ class DeleteController
                 $stack = array();
 
 
+
+
                 $stack = $ss->removeElement($user, $path, $name, $version); //version can be null
 
                 if(!empty($stack))
@@ -59,6 +61,10 @@ class DeleteController
 
         }
 
+        catch(NoContentException $n)
+        {
+            $this->error(204);
+        }
         catch(InvalidArgumentException $e)
         {
             $this->error(400);
@@ -67,6 +73,15 @@ class DeleteController
         {
             $this->error(500);
         }
+        catch(DataNotFoundException $f)
+        {
+            $this->error(404);
+        }
+        catch(ConflictException $c)
+        {
+            $this->error(409);
+        }
+
     }
 
     private function success($statusCode)

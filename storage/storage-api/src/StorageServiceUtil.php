@@ -40,7 +40,7 @@ public static function uuidV4()
 /*
 * Utility to separate the path into two pieces: (the path -1 element) and (the element)
 * It also do additional checks like pathify and isFileName
-* Example: /bla/bla/blaargh will be splitted into /bla/bla and blaargh
+* Example: /a/b/c will be splitted into /a/b and c
 */
 public static function dividePathFromLast($path)
 {
@@ -53,7 +53,7 @@ public static function dividePathFromLast($path)
 
     //The last directory in the file is the one I need
 
-    $arrpath = explode('/', self::pathify($path) );
+    $arrpath = explode('/', $path );
 
     if(count($arrpath) == 1) //only one element that for previous check is not the empty string
         return ['', $arrpath[0]]; //this element is in the root directory
@@ -77,7 +77,8 @@ public static function dividePathFromLast($path)
     $last_el = $arrpath[count($arrpath)-1]; //the last element, a.k.a. a dirname or a filename
 
 
-    if(!self::isFileName($last_el))
+    //is a legit fileName?
+    if( (strpos($last_el, '/') === true) OR ($last_el == '') OR (strlen($last_el) > 255) )
         throw new InvalidArgumentException();
 
     return [$strpath, $last_el];
@@ -116,6 +117,7 @@ public static function isFileName($toCheck)
     //having a / or being empty is illegal for a file name (without path)
     if( (strpos($toCheck, '/') === true) OR ($toCheck == '') OR (strlen($toCheck) > 255))
         return false;
+
     return true;
 }
 

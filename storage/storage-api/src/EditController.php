@@ -77,6 +77,14 @@ class EditController
         {
             $this->error(500);
         }
+        catch(DataNotFoundException $f)
+        {
+            $this->error(404);
+        }
+        catch(ConflictException $c)
+        {
+            $this->error(409);
+        }
 
     }
 

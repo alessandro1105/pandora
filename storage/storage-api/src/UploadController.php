@@ -62,7 +62,7 @@ public function action()
                 if($ss->getIfExistsByPath($user, $path.'/'.$name) ===true AND $ss->getIfIsDirByPath($user, $path.'/'.$name) === true)
                 {
                     //there is already a directory with the same name as the file version I want to insert... ko!
-                    throw new InvalidArgumentException();
+                    throw new ConflictException();
                 }
                 //--------------------------------------------------DO NOT TRASH
 
@@ -111,6 +111,14 @@ public function action()
     catch(DbException $d)
     {
         $this->error(500);
+    }
+    catch(DataNotFoundException $f)
+    {
+        $this->error(404);
+    }
+    catch(ConflictException $c)
+    {
+        $this->error(409);
     }
 }
 
