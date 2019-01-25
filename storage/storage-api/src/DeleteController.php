@@ -4,7 +4,8 @@
 //user      MANDATORY (the user uuid)
 //path      MANDATORY (the absolute name of the element to be removed, i.e. /path/andName)
 //version   if a file, the version to be removed. If a file and not specified, the maximum version will be removed
-
+//behaviour: if the version number, the path or the filename does not respect the general rules, it's InvalidArgumentException
+// if the file version, or the path, or the user, or the directory doesn't exist, it is returned 200, as it is sucessfully eliminated
 class DeleteController
 {
 
@@ -20,7 +21,7 @@ class DeleteController
 
                 $path = $_GET['path']; //supposed to be in the query string just for testing...
 
-                $version = ( (isset($version)) ? $version : NULL);
+                $version = ( (isset($_GET['version'])) ? $_GET['version'] : NULL);
 
         //------------------------------------------------------END PARAMETERS RETRIEVAL
 
@@ -47,9 +48,11 @@ class DeleteController
 
                 $stack = $ss->removeElement($user, $path, $name, $version); //version can be null
 
-
-                foreach($stack as $v_uuid) //each of them correspond to a file version, i.e. a physical file in the persistent
-                    file_get_contents('http://localhost/persistentService/deleter.php?fileToDelete='.$v_uuid);
+                if(!empty($stack))
+                {
+                    foreach($stack as $v_uuid) //each of them correspond to a file version, i.e. a physical file in the persistent
+                        file_get_contents('http://localhost/persistentService/deleter.php?fileToDelete='.$v_uuid);
+                }
 
                 $this->success(200);
 

@@ -226,14 +226,10 @@ public function getVersionUuid($user, $path, $fileName, $version)
         throw new InvalidArgumentException();
 
 
-    try
-    {
-        $version = (int) $version;
-    }
-    catch(Exception $e)
-    {
+    if(!is_numeric($version)) //necessary, otherwise the cast from a non numeric string to int will return 0 (=max version)
         throw new InvalidArgumentException();
-    }
+
+    $version = (int) $version;
 
 
     if($version < 0) //version ==0 : take the highest version, legit value
@@ -282,7 +278,7 @@ public function getVersionUuid($user, $path, $fileName, $version)
 * $this->conn
 * $user
 * $path         path where the new dir will be inserted. If empty, it's the root directory
-* $dir_name     a valid file name. This makes impossible to use this private function solely to create the root directory
+* $dir_name     a valid file name. This makes impossible to use this function solely to create the root directory
 */
 public function makeDir($user, $path, $dir_name)
 {
@@ -342,14 +338,13 @@ public function addVersion($user, $path, $my_file_name, $my_file_version_uuid, $
     if(!preg_match('/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i', $my_file_version_uuid))
         throw new InvalidArgumentException();
 
-    try
-    {
-        $size = (int) $size;
-    }
-    catch(Exception $e)
-    {
+
+
+    if(!is_numeric($size)) //necessary, otherwise the cast from a non numeric string to int will return 0 (=max version)
         throw new InvalidArgumentException();
-    }
+
+    $size = (int) $size;
+
 
 
 
@@ -522,17 +517,14 @@ public function removeElement($user, $path, $name, $version)
     if( (strpos($name, '/') === true) OR (strlen($name) > 255))
         throw new InvalidArgumentException();
 
-
     if($version != NULL)
     {
-        try
-        {
-            $version = (int) $version;
-        }
-        catch(Exception $e)
-        {
+        if(!is_numeric($version)) //necessary, otherwise the cast from a non numeric string to int will return 0 (=ma)
             throw new InvalidArgumentException();
-        }
+
+
+        $version = (int) $version;
+
 
         if($version < 0) //version ==0 : take the highest version, legit value
             throw new InvalidArgumentException();
