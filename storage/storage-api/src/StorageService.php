@@ -3,6 +3,7 @@
 
 /*
 * This class contains every (and only) utilities to connect and perform queries to the storage-db
+
 */
 class StorageService
 {
