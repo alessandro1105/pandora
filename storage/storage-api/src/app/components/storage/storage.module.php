@@ -49,4 +49,7 @@
     ->controller('retrieveCtrl', '\App\Components\Storage\Retrieve\RetrieveController')
 
     // Register the Upload Controller
-    ->controller('uploadCtrl', '\App\Components\Storage\Upload\UploadController');
+    ->controller('uploadCtrl', '\App\Components\Storage\Upload\UploadController')
+
+    // Register Storage Service
+    ->service('storageService', '\App\Components\Storage\StorageService');
