@@ -356,7 +356,7 @@
 			// }
 
 			// Check all the url parts, if one of these is different the urls are different
-			for ($i = 0; $i < count($url1) -1; $i++) {
+			for ($i = 0; $i < count($url2); $i++) {
 				
 				// If url2 is a parameter, save it and continue
 				if (substr_compare($url2[$i], ":", 0, 1) === 0) {
@@ -365,8 +365,13 @@
 
 				// Check for wildcard
 				} else if (substr_compare($url2[$i], "*", 0, 1) === 0) {
-					$params[substr($url2[$i], 1)] = array_slice($url1, $i, count($url1) -1 - $i);
-					$params[substr($url2[$i], 1)][] = explode('?', $url1[count($url1) -1])[0];
+
+					if (count($url1) == $i) {
+						$params[substr($url2[$i], 1)] = [];
+					} else {
+						$params[substr($url2[$i], 1)] = array_slice($url1, $i, count($url1) -1 - $i);
+						$params[substr($url2[$i], 1)][] = explode('?', $url1[count($url1) -1])[0];
+					}
 
 					$this->current['params'] = $params;
 					return true;
@@ -378,6 +383,14 @@
 				}
 			}
 
+			// // If the length are different
+			// if (count($url1) < count($url2) && substr_compare($url2[count($url1)], "*", 0, 1) === 0) {
+			// 	$params[substr($url2[count($url1)], 1)] = [];
+
+			// 	$this->current['params'] = $params;
+			// 	return true;
+			// }
+
 			// Explode last part of the urls
 			$url1LastExploded = explode("?", $url1[count($url1) -1]);
 			$url2LastExploded = explode("?", $url2[count($url2) -1]);
@@ -387,6 +400,13 @@
 				$params[substr($url2LastExploded[0], 1)] = $url1LastExploded[0];
 
 			// If the $url1LastExploded[0] != $url2LastExploded[0], the urls are different
+			} else if (substr_compare($url2LastExploded[0], "*", 0, 1) === 0) {
+
+				$params[substr($url2LastExploded[0], 1)] = array_slice($url1, $i, count($url1) -1 - $i);
+				//$params[substr($url2LastExploded[0], 1)][] = explode('?', $url1[count($url1) -1])[0];
+
+				$this->current['params'] = $params;
+				return true;
 			} else if ($url1LastExploded[0] != $url2LastExploded[0]) {
 				return false;
 			}
