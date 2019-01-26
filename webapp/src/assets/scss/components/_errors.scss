@@ -1,0 +1,19 @@
+form {
+    .ng-dirty {
+        &.ng-invalid + div span i{
+            color: $red;
+        }
+
+        &.ng-valid + div span i {
+            color: $green;
+        }
+    }
+
+    &.ng-submitted {
+        .ng-invalid + div span i {
+            color: $red;
+        }
+    }
+
+    
+}

@@ -1,13 +1,22 @@
 angular
     .module('pandora', [
+        // Vendors
         'ui.router', // UI Router
         'ui.bootstrap', // UI Bootstrap
 
+        // Components
         'page', // Page Module
         'listing', // Homepage Module
         'error404', // Error 404 Module
-        'user' // User Module
+        'user', // User Module
+
+        // Commons
+        'loading-spinner', // Loading Spinner Module
+        'alert' // Alert Module
     ])
+
+    // API base endpoint
+    .constant('API_BASE', '/api')
 
     .config(function ($urlRouterProvider, $locationProvider, $urlMatcherFactoryProvider) {
         // UI Router non strict mode and case insensitive
@@ -20,7 +29,7 @@ angular
         // Automatically redirect to homepage at startup
         $urlRouterProvider
             .when('/', function ($state) {
-                $state.go('homepage');
+                $state.go('listing');
             })
             .otherwise(function ($injector) {
                 // Get $state service from $injector
@@ -28,4 +37,24 @@ angular
                 // Transit to error404 state
                 $state.go('error404');
             });
+    })
+
+    .controller('mainCtrl', function ($timeout, UserService) {
+        var vm = this;
+
+        // set that the content is not loaded
+        vm.spinnerVisible = true;
+
+        // When the promise is resolved hide the page loader
+        UserService.logged()
+            .then(
+                function () {},
+                function () {}
+            ).finally(function () {
+                // Hide the page loader after 1 seconds the request
+                $timeout(function () {
+                    vm.spinnerVisible = false;
+                }, 1000);
+            });
+
     });

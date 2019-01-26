@@ -21,29 +21,40 @@
     <!-- App -->
     <script src="app/app.module.js"></script>
 
-    <!-- Page Module -->
+    <!-- Component: Page Module -->
     <script src="app/components/page/page.module.js"></script>
+    <script src="app/components/page/page.ctrl.js"></script>
 
-    <!-- Listing Module -->
+    <!-- Component: Listing Module -->
     <script src="app/components/listing/listing.module.js"></script>
 
-    <!-- Error 404 Module -->
+    <!-- Component: Error 404 Module -->
     <script src="app/components/error404/error404.module.js"></script>
 
-    <!-- User Module -->
+    <!-- Component: User -->
     <script src="app/components/user/user.module.js"></script>
-    <!-- Login Sub Module -->
-    <script src="app/components/user/login/login.module.js"></script>
-    <!-- Signup Sub Module -->
-    <script src="app/components/user/signup/signup.module.js"></script>
+    <script src="app/components/user/user.service.js"></script>
+    <script src="app/components/user/login/login.ctrl.js"></script>
+    <script src="app/components/user/signup/signup.ctrl.js"></script>
+
+    <!-- Common: Loading Spinner -->
+    <script src="app/commons/loading-spinner/loading-spinner.module.js"></script>
+    <script src="app/commons/loading-spinner/loading-spinner.directive.js"></script>
+
+    <!-- Common: Alert -->
+    <script src="app/commons/alert/alert.module.js"></script>
+    <script src="app/commons/alert/alert.service.js"></script>
 
 
     <!-- Favicon -->
     <link rel="shortcut icon" href="assets/images/favicon.png" />
 </head>
 
-<body>
-    <ui-view></ui-view>
+<body ng-controller="mainCtrl as main">
+    
+    <loading-spinner ng-show="main.spinnerVisible"></loading-spinner>
+
+    <ui-view ng-hide="main.spinnerVisible"></ui-view>
 </body>
 
 </html>

@@ -18,7 +18,13 @@ angular
                 name: 'listing',
                 url: '/',
                 parent: 'page',
-                templateUrl: 'app/components/listing/listing.tpl.html'
+                templateUrl: 'app/components/listing/listing.tpl.html',
+                resolve: {
+                    // Check if the user is allowed to access this type of pages
+                    autentication: function (UserService) {
+                        return UserService.authenticated(); // Check if the user is autenticated
+                    }
+                }
             });
 
     });

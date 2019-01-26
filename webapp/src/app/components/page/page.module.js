@@ -17,7 +17,9 @@ angular
             .state({
                 name: 'page',
                 templateUrl: 'app/components/page/page.tpl.html',
-                abstract: true
+                abstract: true,
+                controller: 'pageCtrl',
+                controllerAs: 'page'
             });
             
     });
