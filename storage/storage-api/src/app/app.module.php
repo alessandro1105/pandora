@@ -11,7 +11,8 @@
 	// Application main module
 	$azzurro
 		->app("app", [
-			'storage'
+			'storage',
+			'database'
 		])
 
 		// Config the module
