@@ -41,6 +41,7 @@ CREATE TABLE version (
     creation_time  TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     file_size FILESIZE NOT NULL,
     uuid_file UUID NOT NULL,
+    uploaded BOOLEAN NOT NULL DEFAULT FALSE,
 
     PRIMARY KEY (uuid),
     FOREIGN KEY (uuid_file) REFERENCES file(uuid)

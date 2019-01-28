@@ -10,12 +10,8 @@
 
         // Action of the controller
         public function action($router/*$request, $userService*/) {
-
-            
-
-
             $uuid = $router->getParam('uuid');
-            $path = $router->getParam('path');
+            $path = '/' . implode('/', $router->getParam('path'));
         }
 
 

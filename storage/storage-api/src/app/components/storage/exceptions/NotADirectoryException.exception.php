@@ -5,6 +5,6 @@
     use \Exception;
 
     // The connection to the database cannot be performed
-    class FileAlreadyExistsException extends Exception {
+    class NotADirectoryException extends Exception {
 
     }

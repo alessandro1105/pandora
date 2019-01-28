@@ -5,6 +5,6 @@
     use \Exception;
 
     // The connection to the database cannot be performed
-    class DirectoryNotFoundException extends Exception {
+    class NotAFileException extends Exception {
 
     }

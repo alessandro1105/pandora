@@ -12,7 +12,9 @@
 	$azzurro
 		->app("app", [
 			'storage',
-			'database'
+			'database',
+
+			'http' // Commons
 		])
 
 		// Config the module

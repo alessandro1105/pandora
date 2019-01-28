@@ -9,8 +9,9 @@
     class EditController {
 
         // Action of the controller
-        public function action(/*$request, $userService*/) {
-            echo "edit";
+        public function action($router/*$request, $userService*/) {
+            $uuid = $router->getParam('uuid');
+            $path = '/' . implode('/', $router->getParam('path'));
         }
 
 

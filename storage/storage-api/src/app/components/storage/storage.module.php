@@ -4,6 +4,11 @@
     $azzurro->module('storage', [
 
     ])
+    
+    // MAX file versions
+    ->constant('MAX_FILE_VERSIONS', 10)
+    // Persistent API
+    ->constant('API_PERSISTENT', 'http://persistent-api')
 
     // Config the module
     ->config(function ($routerProvider) {
