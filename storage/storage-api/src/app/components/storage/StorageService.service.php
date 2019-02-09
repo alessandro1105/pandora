@@ -510,7 +510,7 @@ SQL;
         }
 
         // List the directory content
-        public function deleteRecursively($user, $path, $name) {
+        public function delete($user, $path, $name) {
             if (!preg_match('/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i', $user)) {
                 throw new InvalidArgumentException('User must be a correct uuid!');
             }
@@ -524,32 +524,155 @@ SQL;
             //     throw new InvalidArgumentException('Name must be a correct file name!');
             // }
 
-            $fileToDelete = [];
+            $parent = $this->getDirectory($user, $path);
 
-            // Check if it's a file
-            if (!$this->isADirectory($user, $path, $name)) {
-                // We need to remove all versions of the file
-                $versions = $this->getAllFileVersions();
-                foreach($versions as $version) {
-                    $fileToDelete[] = $version['uuid'];
-                }
-$sql = <<<SQL
-DELETE 
-    FROM version
-    WHERE uuid_file = :uuid_file
-SQL;
+            $child = $this->getChildElement($name, $parent);
 
-                $this->databaseService->prepare($sql);
-
-            } else {
-
+            if (is_null($child)) {
+                throw new NoSuchFileOrDirectoryException('No such file or directory \'' . $path . '/' . $name . '\'!');
             }
+
+            // var_dump($child);
+            // exit;
+
+            return $this->deleteRecursively($child);
 
         }
 
 
 
         // --- PRIVATE FUNCTIONS ---
+
+        // Delete recursively and return array of uuid of file version to remove
+        private function deleteRecursively($element) {
+            $uuids = [];
+
+            // It's a directory
+            if ($element['is_dir']) {
+
+$sql = <<<SQL
+SELECT * 
+	FROM file AS F JOIN has_parent AS H
+		ON H.uuid_child = F.uuid
+	WHERE H.uuid_parent = :uuid_parent
+SQL;
+                // Prepare the query
+                $stmt = $this->databaseService->prepare($sql);
+                
+                // Bind query parameters
+                $stmt->bindParam(':uuid_parent', $element['uuid'], PDO::PARAM_STR);
+
+                // Execute the query
+                $result = $stmt->execute();
+
+                if (!$result) {
+                    // Something went wrong with the query
+                    throw new DatabaseQueryExecutionException('Something went wrong with \'' . $sql . '\'!');
+                }
+
+                $children = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                foreach($children as $child) {
+                    $versions = $this->deleteRecursively($child);
+
+                    foreach($versions as $version) {
+                        $uuids[] = $version;
+                    }
+                }
+            
+            // It's a file
+            } else {
+                // Select all versions
+$sql = <<<SQL
+SELECT *
+    FROM version
+    WHERE uuid_file = :uuid_file
+SQL;
+
+                // Prepare the query
+                $stmt = $this->databaseService->prepare($sql);
+                
+                // Bind query parameters
+                $stmt->bindParam(':uuid_file', $element['uuid'], PDO::PARAM_STR);
+
+                // Execute the query
+                $result = $stmt->execute();
+
+                if (!$result) {
+                    // Something went wrong with the query
+                    throw new DatabaseQueryExecutionException('Something went wrong with \'' . $sql . '\'!');
+                }
+
+                $versions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                foreach($versions as $version) {
+                    $uuids[] = $version['uuid'];
+                }
+
+                // Delete all the version
+$sql = <<<SQL
+DELETE FROM version
+    WHERE uuid_file = :uuid_file
+SQL;
+            
+                // Prepare the query
+                $stmt = $this->databaseService->prepare($sql);
+                
+                // Bind query parameters
+                $stmt->bindParam(':uuid_file', $element['uuid'], PDO::PARAM_STR);
+
+                // Execute the query
+                $result = $stmt->execute();
+
+                if (!$result) {
+                    // Something went wrong with the query
+                    throw new DatabaseQueryExecutionException('Something went wrong with \'' . $sql . '\'!');
+                }
+            
+            }
+
+            // Delete from child
+$sql = <<<SQL
+DELETE FROM has_parent
+    WHERE uuid_child = :uuid_child
+SQL;
+
+            // Prepare the query
+            $stmt = $this->databaseService->prepare($sql);
+            
+            // Bind query parameters
+            $stmt->bindParam(':uuid_child', $element['uuid'], PDO::PARAM_STR);
+
+            // Execute the query
+            $result = $stmt->execute();
+
+            if (!$result) {
+                // Something went wrong with the query
+                throw new DatabaseQueryExecutionException('Something went wrong with \'' . $sql . '\'!');
+            }
+
+            // Remove the element
+$sql = <<<SQL
+DELETE FROM file
+    WHERE uuid = :uuid
+SQL;
+            
+            // Prepare the query
+            $stmt = $this->databaseService->prepare($sql);
+            
+            // Bind query parameters
+            $stmt->bindParam(':uuid', $element['uuid'], PDO::PARAM_STR);
+
+            // Execute the query
+            $result = $stmt->execute();
+
+            if (!$result) {
+                // Something went wrong with the query
+                throw new DatabaseQueryExecutionException('Something went wrong with \'' . $sql . '\'!');
+            }
+
+            return $uuids;
+        }
 
         // Obtain directory from path
         private function getDirectory($user, $path) {
@@ -635,56 +758,45 @@ SQL;
         // Return null if nothing exists
         // Return false if it's a file
         private function getChildDirectory($name, $parent) {
-        
-            //get the child"s uuid with name equals to $fname
-        
-$sql = <<<SQL
-SELECT F.uuid, F.is_dir
-    FROM file AS F INNER JOIN has_parent AS H
-        ON F.uuid = H.uuid_child
-    WHERE H.uuid_parent = :parent_uuid AND F.file_name = :file_name
-SQL;
+            $directory = $this->getChildElement($name, $parent);
             
-            // Prepare the query
-            $stmt = $this->databaseService->prepare($sql);
-            
-            // Bind query parameters
-            $stmt->bindParam(':parent_uuid', $parent, PDO::PARAM_STR);
-            $stmt->bindParam(':file_name', $name, PDO::PARAM_STR);
-
-            // Execute the query
-            $result = $stmt->execute();
-
-            if ($result) {
-                $directory = $stmt->fetch(PDO::FETCH_ASSOC);
-
-                // If there is nothing return null
-                if ($directory === false) {
-                    return null;
-                }
-
-                // If it's a file thow an exception
-                if (!$directory['is_dir']) {
-                    return false;
-                }
-
-                // return uuid
-                return $directory['uuid'];
+            if ($directory == null) {
+                return null;
             }
 
-            
+            if (!$directory['is_dir']) {
+                return false;
+                
+            } else {
+                return $directory['uuid'];
+            }            
         }
 
         // Return the uuid of the file
         private function getChildFile($name, $parent) {
+            $file = $this->getChildElement($name, $parent);
+            
+            if ($file == null) {
+                return null;
+            }
 
+            if ($file['is_dir']) {
+                return false;
+
+            } else {
+                return $file['uuid'];
+            }
+
+        }
+
+        private function getChildElement($name, $parent) {
 $sql = <<<SQL
 SELECT F.uuid, F.is_dir
     FROM file AS F INNER JOIN has_parent AS H
         ON F.uuid = H.uuid_child
     WHERE H.uuid_parent = :parent_uuid AND F.file_name = :file_name
 SQL;
-
+            
             // Prepare the query
             $stmt = $this->databaseService->prepare($sql);
             
@@ -695,17 +807,12 @@ SQL;
             // Execute the query
             $result = $stmt->execute();
 
-            if ($result) {
-                $file = $stmt->fetch(PDO::FETCH_ASSOC);
-
-                if ($file['is_dir']) {
-                    return false;
-                }
-
-                return $file['uuid'];
+            if (!$result) {
+                // Something went wrong with the query
+                throw new DatabaseQueryExecutionException('Something went wrong with \'' . $sql . '\'!');
             }
 
-            return null;
+            return $stmt->fetch(PDO::FETCH_ASSOC);
         }
 
         private function addFile($name, $parent) {

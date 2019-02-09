@@ -42,14 +42,19 @@
 
             try {
                 
-                // $fileToDelete = $storageService->deleteRecursively($user, $path, $name);
+                $uuids = $storageService->delete($user, $path, $name);
 
-                // // Elimina ricorsivamente i file
-                // if (!empty($fileToDelete)) {
+                foreach($uuids as $uuid) {
+                    // Remove version from persistent service
+                    $response = $http->request(
+                        'DELETE',
+                        $API_PERSISTENT . '/' . $uuid
+                    );
 
-                // }
+                    // We assume that the request has been successfully
+                }
 
-                // $this->success();
+                $this->success(200);
 
             } catch (InvalidArgumentException $e) {
                 $this->error(400, [
@@ -60,36 +65,14 @@
                 return false;
 
             } catch (NoSuchFileOrDirectoryException $e) {
-                $this->error(400, [
-                    'errors' => [
-                        'directoryNotFound' => 'No such file or directory'
-                    ]
-                ]);
-                return false;
-
-            } catch (FileOrDirectoryAlreadyExistsException $e) {
-                $this->error(409, [
-                    'errors' => [
-                        'fileOrDirectoryAlreadyExists' => 'A file or a directory already exists in the parent directory with the same name.'
-                    ]
-                ]);
+                $this->success(204);
                 return false;
 
             } catch (NotADirectoryException $e) {
-                $this->error(400, [
-                    'errors' => [
-                        'notADirectory' => 'The path is not a directory'
-                    ]
-                ]);
+                // Should be a different error
+                $this->success(204);
                 return false;
 
-            } catch (NoSuchFileVersionException $e) {
-                $this->error(404, [
-                    'errors' => [
-                        'fileVersionNotFound' => 'The version for this file cannot be found'
-                    ]
-                ]);
-                return false;
             }
         }
 
@@ -97,9 +80,9 @@
         /* =============== Private =============== */
 
         // Generate the response
-        private function success() {
+        private function success($status) {
             // Setting status code
-            http_response_code(200); // OK
+            http_response_code($status); // OK
         }
 
         // Generate the error response
