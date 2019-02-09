@@ -101,7 +101,9 @@
 
         // Download a file. The method is GET
         public function download($url) {
+            $remote = fopen($url, 'rb');
 
+            return $remote;
         }
         
     }

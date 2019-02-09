@@ -9,6 +9,7 @@
     use \App\Components\Storage\Exceptions\FileOrDirectoryAlreadyExistsException;
     use \App\Components\Storage\Exceptions\NotADirectoryException;
     use \App\Components\Storage\Exceptions\NotAFileException;
+    use \App\Components\Storage\Exceptions\NoSuchFileVersionException;
     
     use \App\Components\Database\Exceptions\DatabaseQueryExecutionException;
 
@@ -142,7 +143,8 @@ SQL;
 $sql = <<<SQL
 SELECT *
     FROM version
-    WHERE uuid_file = :uuid_file
+    WHERE uuid_file = :uuid_file AND uploaded = TRUE
+    ORDER BY version_number
 SQL;
                 // Prepare the query
             $stmt = $this->databaseService->prepare($sql);
@@ -168,7 +170,87 @@ SQL;
         // Get a specific version
         // If version is null get last one
         public function getFileVersion($user, $path, $name, $version = null) {
+            if (!preg_match('/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i', $user)) {
+                throw new InvalidArgumentException('User must be a correct uuid!');
+            }
 
+            // Need to check path and $dir_name
+            // if (...) {
+            //     throw new InvalidArgumentException('Path must be a correct path name!');
+            // }
+
+            // if (...) {
+            //     throw new InvalidArgumentException('Name must be a correct file name!');
+            // }
+
+
+            $parent = $this->getDirectory($user, $path);
+
+            // Get the file
+            $file = $this->getChildFile($name, $parent);
+
+            // If the file doesn't exists
+            if (is_null($file)) {
+                throw new NoSuchFileOrDirectoryException('No such file or directory \'' . $path .  '/' . $name . '\'!');
+
+            // If the file is a directory
+            } else if ($file === false) {
+                throw new NotAFileException('Not a file \'' . $path . '/' . $name . '\'!');
+            }
+
+            // Prepare sql satement
+            $stmt = null;
+
+            if (!is_null($version)) {
+                // Select all versions
+$sql = <<<SQL
+SELECT *
+    FROM version
+    WHERE uuid_file = :uuid_file AND uploaded = TRUE AND version_number = :version_number
+    ORDER BY version_number
+SQL;
+                // Prepare the query
+                $stmt = $this->databaseService->prepare($sql);
+
+                // Bind query parameters
+                $stmt->bindParam(':uuid_file', $file, PDO::PARAM_STR);
+                $stmt->bindParam(':version_number', $version, PDO::PARAM_INT);
+            
+            } else {
+$sql = <<<SQL
+SELECT *
+    FROM version
+    WHERE uuid_file = :uuid_file 
+        AND uploaded = TRUE 
+        AND version_number = (SELECT MAX(version_number)
+                                    FROM version
+                                    WHERE uuid_file = :uuid_file)
+    ORDER BY version_number
+SQL;
+                // Prepare the query
+                $stmt = $this->databaseService->prepare($sql);
+
+                // Bind query parameters
+                $stmt->bindParam(':uuid_file', $file, PDO::PARAM_STR);
+            }
+
+            // Execute the query
+            $result = $stmt->execute();
+
+            if (!$result) {
+                // Something went wrong with the query
+                throw new DatabaseQueryExecutionException('Something went wrong with \'' . $sql . '\'!');
+            }
+
+            // We consider that the query has been executed correctly
+            $version = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (empty($version)) {
+                throw new NoSuchFileVersionException('File version not found!');
+            }
+
+            // Return the versions
+            return $version[0];
         }
 
         // Remove a specific file version
@@ -316,6 +398,116 @@ SQL;
             return true;
         }
 
+        // Check if it is a directory
+        public function isADirectory($user, $path, $name) {
+            if (!preg_match('/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i', $user)) {
+                throw new InvalidArgumentException('User must be a correct uuid!');
+            }
+
+            // Need to check path and $dir_name
+            // if (...) {
+            //     throw new InvalidArgumentException('Path must be a correct path name!');
+            // }
+
+            // if (...) {
+            //     throw new InvalidArgumentException('Name must be a correct file name!');
+            // }
+
+            // It's the root
+            if ($path == '/' && $name == '/') {
+                return true;
+            }
+
+            $parent = $this->getDirectory($user, $path);
+
+            $child = $this->getChildDirectory($name, $parent);
+
+            // Check if the element exists
+            if (is_null($child)) {
+                throw new NoSuchFileOrDirectoryException('No such file or directory \'' . $path .  '/' . $name . '\'!');
+
+            // It's a file
+            } else if ($child === false) {
+                return false;
+            }
+
+            // It's a directory
+            return true;
+        }
+
+        // List the directory content
+        public function listDirectory($user, $path, $name) {
+            if (!preg_match('/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i', $user)) {
+                throw new InvalidArgumentException('User must be a correct uuid!');
+            }
+
+            // Need to check path and $dir_name
+            // if (...) {
+            //     throw new InvalidArgumentException('Path must be a correct path name!');
+            // }
+
+            // if (...) {
+            //     throw new InvalidArgumentException('Name must be a correct file name!');
+            // }
+
+
+            $parent = $this->getDirectory($user, $path);
+            $child = null;
+
+            if ($name == '/') {
+                $child = $parent;
+            } else {
+                $child = $this->getChildDirectory($name, $parent);
+            }
+
+            // Check if the element exists
+            if (is_null($child)) {
+                throw new NoSuchFileOrDirectoryException('No such file or directory \'' . $path .  '/' . $name . '\'!');
+
+            // It's a file
+            } else if ($child === false) {
+                throw new NotADirectoryException('Not a directory \'' . $path . '\'!');
+            }
+
+            // Prepare the query
+$sql = <<<SQL
+SELECT *
+	FROM file as F LEFT JOIN has_parent as H
+		ON F.uuid = H.uuid_child
+	WHERE H.uuid_parent = :uuid_directory
+SQL;
+
+            // Prepare the query
+            $stmt = $this->databaseService->prepare($sql);
+
+            // Bind query parameters
+            $stmt->bindParam(':uuid_directory', $child, PDO::PARAM_STR);
+
+            // Execute the query
+            $result = $stmt->execute();
+
+            if (!$result) {
+                // Something went wrong with the query
+                throw new DatabaseQueryExecutionException('Something went wrong with \'' . $sql . '\'!');
+            }
+
+            $listing = [];
+
+            $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            foreach($data as $item) {
+
+                $object = [
+                    'directory' => $item['is_dir'],
+                    'name' => $item['file_name'],
+                    'path' => ($path == '/' ? '/' : $path . '/') . ($name == '/' ? '' : $name . '/') . $item['file_name'],
+                    'creation_time' => strtotime($item['creation_time'])
+                ];
+
+                $listing[] = $object;
+            }
+
+            return $listing;
+        }
 
 
 
