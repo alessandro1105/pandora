@@ -509,6 +509,44 @@ SQL;
             return $listing;
         }
 
+        // List the directory content
+        public function deleteRecursively($user, $path, $name) {
+            if (!preg_match('/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i', $user)) {
+                throw new InvalidArgumentException('User must be a correct uuid!');
+            }
+
+            // Need to check path and $dir_name
+            // if (...) {
+            //     throw new InvalidArgumentException('Path must be a correct path name!');
+            // }
+
+            // if (...) {
+            //     throw new InvalidArgumentException('Name must be a correct file name!');
+            // }
+
+            $fileToDelete = [];
+
+            // Check if it's a file
+            if (!$this->isADirectory($user, $path, $name)) {
+                // We need to remove all versions of the file
+                $versions = $this->getAllFileVersions();
+                foreach($versions as $version) {
+                    $fileToDelete[] = $version['uuid'];
+                }
+$sql = <<<SQL
+DELETE 
+    FROM version
+    WHERE uuid_file = :uuid_file
+SQL;
+
+                $this->databaseService->prepare($sql);
+
+            } else {
+
+            }
+
+        }
+
 
 
         // --- PRIVATE FUNCTIONS ---
