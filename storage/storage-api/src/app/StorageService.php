@@ -11,9 +11,9 @@ class StorageService
 
     public function __construct()
     {
-        $servername = "localhost";
+        $servername = "user-db";
         $username = "postgres";
-        $password = "postgres";
+        $password = "pandora1";
 
         try
         {
@@ -528,7 +528,7 @@ public function renameElement($user, $path, $name, $newname)
 * The function to delete an element in database that is accessible outside this class
 * It returns the array with the uuid of the versions which correspond to a name of a physical file in the persistent, that will be removed outside
 */
-public function removeElement($user, $path, $name, $version)
+public function removeElement($user, $path, $name)
 {
 
     //CHECK SECTION-------------------------------------------------------------
@@ -544,18 +544,6 @@ public function removeElement($user, $path, $name, $version)
     if( (strpos($name, '/') === true) OR (strlen($name) > 255))
         throw new InvalidArgumentException();
 
-    if($version != NULL)
-    {
-        if(!is_numeric($version)) //necessary, otherwise the cast from a non numeric string to int will return 0 (=ma)
-            throw new InvalidArgumentException();
-
-
-        $version = (int) $version;
-
-        if($version < 0) //version ==0 : take the highest version, legit value
-            throw new InvalidArgumentException();
-
-    }
 
 
     $elemUuid = $this->getLastElementUuid($user, $path.'/'.$name);
@@ -563,15 +551,6 @@ public function removeElement($user, $path, $name, $version)
     if($elemUuid == '')
         throw new NoContentException();
 
-    //just delete one version if it's a file
-    if(!$this->getIfIsDir($elemUuid) )
-    {
-        if($version == NULL)
-            $version = 0;
-
-        if($this->getThisVersionUuid($version,$elemUuid) == '')
-            throw new NoContentException();
-    }
     //---------------------------------------------------------END CHECK SECTION
 
 
@@ -583,7 +562,7 @@ public function removeElement($user, $path, $name, $version)
 
         $stack_of_uuid = array();
 
-        $this->removeRecElement($user, $elemUuid, $version, $stack_of_uuid); //passing by reference the stack
+        $this->removeRecElement($user, $elemUuid, NULL, $stack_of_uuid); //passing by reference the stack
 
         $this->conn->commit();
 

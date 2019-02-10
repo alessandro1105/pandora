@@ -71,19 +71,41 @@ class EditController
         }
         catch(InvalidArgumentException $e)
         {
-            $this->error(400);
+            $this->error(400, [
+                                    'errors' => [
+                                        'badRequest' => 'The data in the request is wrong.'
+                                    ]
+                                ]);
+            return false;
         }
         catch(DbException $e)
         {
-            $this->error(500);
+            $this->error(500, [
+                                    'errors' => [
+                                        'internalError' => 'A problem in the storage database occured.'
+                                    ]
+                                ]);
+            return false;
         }
         catch(DataNotFoundException $f)
         {
-            $this->error(404);
+            $this->error(404, [
+                                    'errors' => [
+                                        'notFound' => 'The data in the request were not found.'
+                                    ]
+                                ]);
+
+            return false;
         }
         catch(ConflictException $c)
         {
-            $this->error(409);
+            $this->error(409, [
+                                    'errors' => [
+                                        'conflict' => 'The data in the request generated a conflict.'
+                                    ]
+                                ]);
+
+            return false;
         }
 
     }
@@ -93,10 +115,17 @@ class EditController
         http_response_code($statusCode);
     }
 
-    private function error($statusCode)
+    private function error($errorCode, $errors = array())
     {
-        http_response_code($statusCode);
+        // Setting status code
+        http_response_code($errorCode);
+        if ($errors != array())
+        {
+            // Setting the content type of the request
+            header('Content-Type: application/json');
+            // echo the response
+            echo json_encode($errors, JSON_PRETTY_PRINT);
+        }
     }
-
 
 }

@@ -1,5 +1,8 @@
 <?php
 
+
+include 'ConnectionToPersistentException.php';
+
 /*
 usr and path are always required
 Functionalities:
@@ -84,14 +87,13 @@ class RetrieveController
                     $persistentFilename = $ss->getVersionUuid($user, $startingPath, $element, $version);
 
 
-                    $url = 'http://localhost/persistentService/downloader.php?fileToDownload='.$persistentFilename;
-
+                    $url = $API_PERSISTENT.'/'.$persistentFilename;
 
 
                     $remote = fopen($url, 'rb');
-                    //http_response_code(404);
+
                     header('Content-Disposition: attachment; filename="'.$persistentFilename.'"');
-                    header('Content-type: application/x-compress');
+                    header('Content-type: application/octet-stream');
                     header("Content-Transfer-Encoding: Binary");
                     //header ("Content-Length: " . filesize('mactex-20180417.pkg')); // NOT WORKING
                     while(!feof($remote)) {
@@ -110,19 +112,43 @@ class RetrieveController
         }
         catch(InvalidArgumentException $e)
         {
-            $this->error(400);
+            $this->error(400, [
+                                    'errors' => [
+                                        'badRequest' => 'The data in the request is wrong.'
+                                    ]
+                                ]);
+
+            return false;
         }
-        catch(DbException $e)
+        catch(DbException $d)
         {
-            $this->error(500);
+            $this->error(500, [
+                                    'errors' => [
+                                        'internalError' => 'Something went wrong inside the database server.'
+                                    ]
+                                ]);
+
+            return false;
         }
         catch(DataNotFoundException $f)
         {
-            $this->error(404);
+            $this->error(404, [
+                                    'errors' => [
+                                        'notFound' => 'The data in the request were not found.'
+                                    ]
+                                ]);
+
+            return false;
         }
         catch(ConflictException $c)
         {
-            $this->error(409);
+            $this->error(409, [
+                                    'errors' => [
+                                        'conflict' => 'The data in the request generated a conflict.'
+                                    ]
+                                ]);
+
+            return false;
         }
 
     }
@@ -133,10 +159,17 @@ class RetrieveController
         http_response_code($statusCode);
     }
 
-    private function error($statusCode)
+    private function error($errorCode, $errors = array())
     {
-        http_response_code($statusCode);
+        // Setting status code
+        http_response_code($errorCode);
+        if ($errors != array())
+        {
+            // Setting the content type of the request
+            header('Content-Type: application/json');
+            // echo the response
+            echo json_encode($errors, JSON_PRETTY_PRINT);
+        }
     }
-
 
 }
