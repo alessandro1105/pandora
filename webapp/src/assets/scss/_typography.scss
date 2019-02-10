@@ -125,9 +125,17 @@ $value in $theme-colors {
   color: #404852;
   margin-bottom: 22px;
   font-size: 14px;
-  text-transform: capitalize;
+  // text-transform: capitalize;
   .rtl & {
     text-align: right;
+  }
+
+  a {
+    cursor: pointer;
+
+    &:hover {
+      text-decoration: underline !important;
+    }
   }
 }
 

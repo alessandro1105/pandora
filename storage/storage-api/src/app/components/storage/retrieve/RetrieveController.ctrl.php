@@ -93,9 +93,10 @@
 
                         foreach ($versions as $version) {
                             $file['versions'][] = [
+                                'type' => 'version',
                                 'versionNumber' => $version['version_number'],
-                                'creationTime' => $version['creation_time'],
-                                'file_size' => $version['file_size']
+                                'creationTime' => strtotime($version['creation_time']),
+                                'fileSize' => $version['file_size']
                             ];
                         }
 

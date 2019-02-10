@@ -52,8 +52,22 @@ angular
         }
 
         // Get all versions of a file
-        function getVersions() {
+        function getVersions(file) {
+            var deferred = $q.defer();
+            
+            $http({
+                method: 'GET',
+                url: API_STORAGE_SERVICE + '/' + UserService.user.uuid + '/' + file + '?info=true'
+            }).then(function (response) {
 
+                deferred.resolve(response.data);
+
+            }, function errorCallback(response) {
+
+                deferred.reject(response);
+            });
+
+            return deferred.promise;
         }       
 
         // Return the service object

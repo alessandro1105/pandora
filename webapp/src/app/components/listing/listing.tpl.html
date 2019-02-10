@@ -3,7 +3,7 @@
         <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 grid-margin stretch-card">
             <div class="card">
                 <div class="card-body">
-                    <h4 class="card-title"><a href="#" ng-click="listing.test()">Pandora's Box</a></h4>
+                    <h4 class="card-title"><span ng-repeat="part in listing.path"><a ng-click="part.fn()">{{part.name}}</a> <span ng-if="($index+1) != listing.path.length">></span> </span></h4>
 
                     <loading-spinner ng-show="listing.spinnerVisible" style="position: absolute;margin-left: -1.81rem;height: calc(100vh - 179px);"></loading-spinner>
                     
@@ -13,11 +13,12 @@
                                 <tr>
                                     <th><b>Name</b><i class="mdi mdi-arrow-up"></i></th>
                                     <th>Last edit<i class="mdi mdi-arrow-up"></i></th>
+                                    <th ng-if="listing.showingVersions">File Size<i class="mdi mdi-arrow-up"></i></th>
                                     <th>&nbsp;</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr ng-repeat="element in listing.listing" ng-dblclick="listing.doubleClick(element)">
+                                <tr ng-if="!listing.showingVersions" ng-repeat="element in listing.listing" ng-dblclick="listing.doubleClick(element)">
                                     <td><p><i class="mdi mdi-folder" ng-if="element.type == 'directory'"></i><i class="mdi mdi-file" ng-if="element.type == 'file'"></i> {{element.name}}</p></td>
                                     <td><span ng-if="element.type == 'directory'">--</span><span ng-if="element.type == 'file'">{{element.creationTime * 1000 | date : "dd/MM/yyyy 'at' HH:mm:ss"}}</span></td>
                                     <td>
@@ -32,20 +33,35 @@
                                                 </a>
                                             </div>
                                             <div class="dropdown-menu dropdown-menu-left listing-dropdown" uib-dropdown-menu ng-if="element.type == 'file'">
-                                                    <a class="dropdown-item" ng-click="listing.download(element.path)">
-                                                        Download
-                                                    </a>
-                                                    <a class="dropdown-item">
-                                                        Versions
-                                                    </a>
-                                                    <a class="dropdown-item">
-                                                        Delete
-                                                    </a>
-                                                </div>
+                                                <a class="dropdown-item" ng-click="listing.download(element.path)">
+                                                    Download
+                                                </a>
+                                                <a class="dropdown-item" ng-click="listing.showVersions(element.path)">
+                                                    Versions
+                                                </a>
+                                                <a class="dropdown-item">
+                                                    Delete
+                                                </a>
+                                            </div>
                                         </div>
                                     </td>
                                 </tr>
-                                <tr ng-if="listing.listing.length == 0">
+                                <tr ng-if="listing.showingVersions" ng-repeat="element in listing.versions" ng-dblclick="listing.download(listing.file + '?version=' + element.versionNumber)">
+                                    <td><p><i class="mdi mdi-file"></i> Version {{element.versionNumber}}</p></td>
+                                    <td><span>{{element.creationTime * 1000 | date : "dd/MM/yyyy 'at' HH:mm:ss"}}</span></td>
+                                    <td><span>{{element.fileSize}} bytes</span></td>
+                                    <td>
+                                        <div class="dropdown" uib-dropdown>
+                                            <button class="btn btn-sm btn-transparent dropdown-toggle" uib-dropdown-toggle><i class="mdi mdi-dots-horizontal"></i></button>
+                                            <div class="dropdown-menu dropdown-menu-left listing-dropdown" uib-dropdown-menu>
+                                                <a class="dropdown-item" ng-click="listing.download(listing.file + '?version=' + element.versionNumber)">
+                                                    Download
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr ng-if="listing.listing.length == 0 && !listing.showingVersions">
                                     <td>
                                         <p>This directory is empty!</p>
                                     </td>
