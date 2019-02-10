@@ -1,16 +1,8 @@
 <?php
 
-include 'ConnectionToPersistentException.php';
-/*
-user, path are mandatory parameters
+use connectionToPersistentException\PersistentException;
+use connectionToPersistentException\PersistentConnTimeout;
 
-if directory parameter of the query string is present:
-- a new directory will be created with the name equals to the last part of the path
-
-else
-- a file version of the file indicated in path will be uploaded to persistentService and then inserted into the storage-db
-
-*/
 class UploadController
 {
 
@@ -31,14 +23,12 @@ public function action($router, $request, $API_PERSISTENT)
     //--------------------------------------------------END PARAMETERS RETRIEVAL
 
 
-            //the object on which the methods will be called
-            $ss = new StorageService();
-
-
 
 
     try
     {
+
+            $ss = new StorageService();
 
             $scissor = StorageServiceUtil::dividePathFromLast($path);
             $path = $scissor[0];
@@ -74,7 +64,6 @@ public function action($router, $request, $API_PERSISTENT)
 
 
 
-                $connection_timeout_sec = 20; //in seconds
 
                 set_time_limit(0);
                 $length = (int) $_SERVER['CONTENT_LENGTH'];
@@ -83,8 +72,8 @@ public function action($router, $request, $API_PERSISTENT)
                 $c = curl_init();
                 curl_setopt($c, CURLOPT_URL,  $API_PERSISTENT . '/'. $version_uuid);
                 curl_setopt($c, CURLOPT_PUT, true);
+                curl_setopt($c, CURLOPT_CONNECTTIMEOUT, 20); //timeout in seconds to await for a connection
 
-                curl_setopt($c, CURLOPT_CONNECTTIMEOUT, $connection_timeout_sec); //NEW!! timeout in seconds to await for a connection
 
                 curl_setopt($c, CURLOPT_INFILESIZE, $length);
                 curl_setopt($c, CURLOPT_READFUNCTION, function () {
@@ -93,8 +82,6 @@ public function action($router, $request, $API_PERSISTENT)
                 });
                 curl_exec($c);
 
-
-                //new part... managing timeout:
                 if(curl_errno($c)) //for example, now if I have errno 28 it's a timed out, so it behaves consistently with our failure model
                 {
                     throw new PersistentConnException();
@@ -124,17 +111,11 @@ public function action($router, $request, $API_PERSISTENT)
                     $ch = curl_init();
                     curl_setopt($ch, CURLOPT_URL, $API_PERSISTENT.'/'.$possible_uuid_toberemoved);
                     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
-                    curl_setopt($c, CURLOPT_CONNECTTIMEOUT, $connection_timeout_sec); //NEW!! timeout in seconds to await for a connection
+                    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, $connection_timeout_sec); //NEW!! timeout in seconds to await for a connection
                     //curl_setopt($ch, CURLOPT_POSTFIELDS, $json);
                     //curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                     $result = curl_exec($ch);
-                    //$result = json_decode($result);
 
-                    //new part... managing timeout:
-                    if(curl_errno($c)) //for example, now if I have errno 28 it's a timed out, so it behaves consistently with our failure model
-                    {
-                        throw new PersistentConnException();
-                    }
 
                     //the non-existence (http response 204 from Persistent) is considered ok, so it's not handled in a particular way
 
@@ -152,27 +133,17 @@ public function action($router, $request, $API_PERSISTENT)
 
     }
 
-    catch(PersistentConnException $e)
-    {
 
+    catch(PersistentConnException $p)
+    {
         $this->error(500, [
                                 'errors' => [
-                                    'Connection' => '[debug explanation] curl failed to connect with Persistent Service. Probably a timeout occured.'
+                                    'connectionError' => '[debug explanation] curl failed to connect with Persistent Service. Probably a timeout occured.'
                                 ]
                             ]);
         return false;
     }
 
-    catch(PersistentException $e)
-    {
-        $this->error(500, [
-                                'errors' => [
-                                    'badUuidGeneration' => 'Uuid was already an existent file in persistent. Suggested operation: retry again.'
-                                ]
-                            ]);
-
-        return false;
-    }
 
     catch(InvalidArgumentException $e)
     {

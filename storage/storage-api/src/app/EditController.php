@@ -34,8 +34,6 @@ class EditController
 
 
 
-                //the object on which the methods will be called
-                $ss = new StorageService();
 
 
 
@@ -44,6 +42,8 @@ class EditController
         {
 
 
+                //the object on which the methods will be called
+                $ss = new StorageService();
 
                 if($move == NULL AND $rename == NULL)
                     throw new InvalidArgumentException(); //nothing to be done...
@@ -56,14 +56,21 @@ class EditController
 
 
                 if($move == NULL)
+                {
                     $ss->renameElement($user, $path, $name, $rename);
+                }
                 else if($rename == NULL)
+                {
                     $ss->moveElement($user, $path, $name, $move, $name);
+                }
                 else if($rename != NULL AND $move != NULL)
+                {
                     $ss->moveElement($user, $path, $name, $move, $rename);
+                }
                 else
+                {
                     throw new InvalidArgumentException();
-
+                }
 
 
                 $this->success(200);

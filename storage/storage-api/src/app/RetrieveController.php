@@ -1,7 +1,8 @@
 <?php
 
 
-include 'ConnectionToPersistentException.php';
+use ConnectionToPersistentException\PersistentConnTimeout;
+use ConnectionToPersistentException\PersistentException;
 
 /*
 usr and path are always required

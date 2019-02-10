@@ -1,6 +1,7 @@
 <?php
 
-include 'ConnectionToPersistentException.php';
+use ConnectionToPersistentException\PersistentConnTimeout;
+use ConnectionToPersistentException\PersistentException;
 
 
 class DeleteController
@@ -25,8 +26,6 @@ class DeleteController
 
 
 
-                //the object on which the methods will be called
-                $ss = new StorageService();
 
 
 
@@ -34,6 +33,10 @@ class DeleteController
 
         try
         {
+
+
+                //the object on which the methods will be called
+                $ss = new StorageService();
 
                 $twopieces = StorageServiceUtil::dividePathFromLast($path);
                 $path = $twopieces[0];
@@ -54,16 +57,16 @@ class DeleteController
                         //file_get_contents('http://localhost/persistentService/deleter.php?fileToDelete='.$v_uuid);
 
                         $ch = curl_init();
-                        curl_setopt($ch, CURLOPT_URL, $API_PERSISTENT.'/'.$possible_uuid_toberemoved);
+                        curl_setopt($ch, CURLOPT_URL, $API_PERSISTENT.'/'.$v_uuid);
                         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
-                        curl_setopt($c, CURLOPT_CONNECTTIMEOUT, $connection_timeout_sec); //NEW!! timeout in seconds to await for a connection
+                        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 20); //timeout in seconds to await for a connection
 
 
                         $result = curl_exec($ch);
                         //$result = json_decode($result);
 
                         //new part... managing timeout:
-                        if(curl_errno($c)) //for example, now if I have errno 28 it's a timed out, so it behaves consistently with our failure model
+                        if(curl_errno($ch)) //for example, now if I have errno 28 it's a timed out, so it behaves consistently with our failure model
                         {
                             throw new PersistentConnException();
                         }

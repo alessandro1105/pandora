@@ -11,7 +11,7 @@ class StorageService
 
     public function __construct()
     {
-        $servername = "user-db";
+        $servername = "storage-db";
         $username = "postgres";
         $password = "pandora1";
 
@@ -440,8 +440,9 @@ public function moveElement($user, $path, $name, $newpath, $newname)
 
         //check whether an element with the same name already exists in the new path or the element to move doesn't exist
         if($this->getLastElementUuid($user, $newpath.'/'.$newname) != '')
+        {
             throw new ConflictException();
-
+        }
 
         //---------------------------------------------------------END CHECK SECTION
 
