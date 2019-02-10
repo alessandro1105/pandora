@@ -3,8 +3,11 @@
         <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 grid-margin stretch-card">
             <div class="card">
                 <div class="card-body">
-                    <h4 class="card-title">Pandora's Box</h4>
-                    <div class="table-responsive">
+                    <h4 class="card-title"><a href="#" ng-click="listing.test()">Pandora's Box</a></h4>
+
+                    <loading-spinner ng-show="listing.spinnerVisible" style="position: absolute;margin-left: -1.81rem;height: calc(100vh - 179px);"></loading-spinner>
+                    
+                    <div class="table-responsive" ng-hide="listing.spinnerVisible" style="overflow-x: visible;overflow-y: visible;">
                         <table class="table table-hover">
                             <thead>
                                 <tr>
@@ -14,53 +17,40 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td><p><i class="mdi mdi-folder"></i> Test Folder</p></td>
-                                    <td>--</td>
+                                <tr ng-repeat="element in listing.listing" ng-dblclick="listing.doubleClick(element)">
+                                    <td><p><i class="mdi mdi-folder" ng-if="element.type == 'directory'"></i><i class="mdi mdi-file" ng-if="element.type == 'file'"></i> {{element.name}}</p></td>
+                                    <td><span ng-if="element.type == 'directory'">--</span><span ng-if="element.type == 'file'">{{element.creationTime * 1000 | date : "dd/MM/yyyy 'at' HH:mm:ss"}}</span></td>
                                     <td>
                                         <div class="dropdown" uib-dropdown>
                                             <button class="btn btn-sm btn-transparent dropdown-toggle" uib-dropdown-toggle><i class="mdi mdi-dots-horizontal"></i></button>
-                                            <div class="dropdown-menu dropdown-menu-left listing-dropdown" uib-dropdown-menu>
-                                                <a class="dropdown-item">
-                                                    Scarica
+                                            <div class="dropdown-menu dropdown-menu-left listing-dropdown" uib-dropdown-menu ng-if="element.type == 'directory'">
+                                                <a class="dropdown-item" ng-click="listing.changeDirectory(element.path)">
+                                                    Enter
                                                 </a>
                                                 <a class="dropdown-item">
-                                                    Rinomina
-                                                </a>
-                                                <a class="dropdown-item">
-                                                    Sposta
-                                                </a>
-                                                <a class="dropdown-item">
-                                                    Elimina
+                                                    Delete
                                                 </a>
                                             </div>
+                                            <div class="dropdown-menu dropdown-menu-left listing-dropdown" uib-dropdown-menu ng-if="element.type == 'file'">
+                                                    <a class="dropdown-item" ng-click="listing.download(element.path)">
+                                                        Download
+                                                    </a>
+                                                    <a class="dropdown-item">
+                                                        Versions
+                                                    </a>
+                                                    <a class="dropdown-item">
+                                                        Delete
+                                                    </a>
+                                                </div>
                                         </div>
                                     </td>
                                 </tr>
-                                <tr>
-                                    <td><p><i class="mdi mdi-folder"></i> Test Folder 2</p></td>
-                                    <td>--</td>
+                                <tr ng-if="listing.listing.length == 0">
                                     <td>
-                                        <div class="dropdown" uib-dropdown>
-                                            <button class="btn btn-sm btn-transparent dropdown-toggle" uib-dropdown-toggle><i class="mdi mdi-dots-horizontal"></i></button>
-                                            <div class="dropdown-menu dropdown-menu-left listing-dropdown" uib-dropdown-menu>
-                                                <a class="dropdown-item">
-                                                    Scarica
-                                                </a>
-                                                <a class="dropdown-item">
-                                                    Rinomina
-                                                </a>
-                                                <a class="dropdown-item">
-                                                    Sposta
-                                                </a>
-                                                <a class="dropdown-item">
-                                                    Elimina
-                                                </a>
-                                            </div>
-                                        </div>
+                                        <p>This directory is empty!</p>
                                     </td>
                                 </tr>
-                                <tr>
+                                <!-- <tr>
                                     <td><p><i class="mdi mdi-file"></i> File 1</p></td>
                                     <td>29/06/2018 15:35</td>
                                     <td>
@@ -82,30 +72,7 @@
                                             </div>
                                         </div>
                                     </td>
-                                </tr>
-                                <tr>
-                                    <td><p><i class="mdi mdi-file"></i> File 2</p></td>
-                                    <td>29/06/2018 15:35</td>
-                                    <td>
-                                        <div class="dropdown" uib-dropdown>
-                                            <button class="btn btn-sm btn-transparent dropdown-toggle" uib-dropdown-toggle><i class="mdi mdi-dots-horizontal"></i></button>
-                                            <div class="dropdown-menu dropdown-menu-left listing-dropdown" uib-dropdown-menu>
-                                                <a class="dropdown-item">
-                                                    Scarica
-                                                </a>
-                                                <a class="dropdown-item">
-                                                    Rinomina
-                                                </a>
-                                                <a class="dropdown-item">
-                                                    Sposta
-                                                </a>
-                                                <a class="dropdown-item">
-                                                    Elimina
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </td>
-                                </tr>
+                                </tr> -->
                             </tbody>
                         </table>
                     </div>

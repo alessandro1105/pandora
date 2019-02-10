@@ -20,9 +20,9 @@
       width: $sidebar-width-lg;
       height: $navbar-height;
       .navbar-brand {
-        color: $white;
+        color: #333;
         font-size: 1.5rem;
-        line-height: 48px;
+        line-height: 53px;
         margin-right: 0;
         padding: 0.25rem 0;
         @include display-flex;

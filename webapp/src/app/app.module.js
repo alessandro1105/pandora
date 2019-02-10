@@ -9,6 +9,7 @@ angular
         'listing', // Homepage Module
         'error404', // Error 404 Module
         'user', // User Module
+        'storage', // Storage Module
 
         // Commons
         'loading-spinner', // Loading Spinner Module

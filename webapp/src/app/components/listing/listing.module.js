@@ -19,6 +19,8 @@ angular
                 url: '/',
                 parent: 'page',
                 templateUrl: 'app/components/listing/listing.tpl.html',
+                controller: 'listingCtrl',
+                controllerAs: 'listing',
                 resolve: {
                     // Check if the user is allowed to access this type of pages
                     autentication: function (UserService) {
