@@ -56,8 +56,32 @@ class RetrieveController
                     throw new DataNotFoundException();
 
                 //if it is a directory, then the only op allowed here is listing the content
-                echo json_encode($ss->list($user, $path));
+                
+                //echo json_encode($ss->list($user, $path));
 
+                $raw = $ss->list($user,$path));
+                
+                $refined = [
+                    'type' => 'directory',
+                    'name' => $element,
+                    'path' => '/'.$startingPath.'/'.$element,
+                    'listing' => []
+                ];
+                
+                foreach($raw as $e)
+                {
+                    $elem = [
+                      'type' => (($e['is_dir'] === true) ? 'directory' : 'file') ,
+                      'name' => $e['file_name'],
+                      'path' => '/'.$startingPath.'/'.$element.'/'.$e['file_name'],
+                      'creationTime' => strtotime($e['creation_time'])
+                    ];    
+                    
+                    array_push($refined['listing'], $elem);
+                }    
+                
+                echo json_encode($refined);
+                
                 $this->success(200);
                 return;
             }
@@ -73,8 +97,32 @@ class RetrieveController
 
                     //if info is set, then I am asked for the listing of the versions of a certain file
 
-                    echo json_encode($ss->getAllVersionsData($user, $startingPath, $element));
+                    //echo json_encode($ss->getAllVersionsData($user, $startingPath, $element));
 
+                    $raw = getAllVersionsData($user, $startingPath, $element);
+                    
+                     $refined = [
+                    'type' => 'versions',
+                    'name' => $element,
+                    'path' => '/'.$startingPath.'/'.$element,
+                    'versions' => []
+                    ];
+
+                    foreach($raw as $e)
+                    {
+                        $elem = [
+                          'type' => 'version' ,
+                          'versionNumber' => $e['version_number'],
+                          'creationTime' => strtotime($e['creation_time']),
+                          'fileSize' => $e['file_size']
+                        ];    
+
+                        array_push($refined['versions'], $elem);
+                    }    
+
+                    echo json_encode($refined);
+                    
+                    
                     $this->success(200);
                 }
                 else
