@@ -5,4 +5,4 @@ angular
     ])
 
     // API to storage service
-    .constant('API_STORAGE_SERVICE', 'http://localhost:8083');
+    .constant('API_STORAGE_SERVICE', '/storage');

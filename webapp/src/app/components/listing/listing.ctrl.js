@@ -1,7 +1,7 @@
 angular
     .module('listing')
 
-    .controller('listingCtrl', function ($scope, StorageService, UserService, API_BASE, ) {
+    .controller('listingCtrl', function ($scope, StorageService, AlertService) {
         var vm = this;
 
         // Current listing
@@ -79,6 +79,13 @@ angular
                     vm.spinnerVisible = false;
                 })
             
+        }
+
+        vm.deleteElement = function (path) {
+            StorageService.deleteElement(path)
+                .then(function () {
+                    AlertService.info('Element remove successfully');
+                })
         }
 
 

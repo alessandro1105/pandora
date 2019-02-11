@@ -1,7 +1,7 @@
 angular
     .module('page')
 
-    .controller('pageCtrl', function ($state, UserService) {
+    .controller('pageCtrl', function ($state, UserService, $uibModal, StorageService, AlertService) {
         var vm = this;
 
         // Save user object
@@ -30,5 +30,42 @@ angular
                     function () {}
                 );
         }
+
+        vm.newDirectory = function () {
+            var modalInstance = $uibModal.open({
+                animation: true,
+                ariaLabelledBy: 'modal-title',
+                ariaDescribedBy: 'modal-body',
+                templateUrl: 'app/components/page/new-dir-modal/new-dir-modal.tpl.html',
+                controller: 'newDirectoryModalCtrl',
+                controllerAs: 'modal',
+            });
+        
+            modalInstance.result.then(function (directory) {
+                StorageService.newDirectory(directory)
+                    .then(function () { 
+                        AlertService.info('The directory has been successful created');
+                    },
+
+                    function (response) {
+                        if (response.status == 409) {
+                            AlertService.danger('The directory already exists in this path');
+                        }
+                    });
+                    
+            }, function () { } );
+          };
     
+    })
+
+    .controller('newDirectoryModalCtrl', function ($uibModalInstance) {
+        var vm = this;
+
+        vm.ok = function (directory) {
+            $uibModalInstance.close(directory);
+        }
+      
+        vm.cancel = function () {
+          $uibModalInstance.dismiss('cancel');
+        };
     });

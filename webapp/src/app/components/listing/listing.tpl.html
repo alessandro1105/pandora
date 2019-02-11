@@ -28,7 +28,7 @@
                                                 <a class="dropdown-item" ng-click="listing.changeDirectory(element.path)">
                                                     Enter
                                                 </a>
-                                                <a class="dropdown-item">
+                                                <a class="dropdown-item" ng-click="listing.deleteElement(element.path)">
                                                     Delete
                                                 </a>
                                             </div>
@@ -39,7 +39,7 @@
                                                 <a class="dropdown-item" ng-click="listing.showVersions(element.path)">
                                                     Versions
                                                 </a>
-                                                <a class="dropdown-item">
+                                                <a class="dropdown-item" ng-click="listing.deleteElement(element.path)">
                                                     Delete
                                                 </a>
                                             </div>
@@ -63,7 +63,7 @@
                                 </tr>
                                 <tr ng-if="listing.listing.length == 0 && !listing.showingVersions">
                                     <td>
-                                        <p>This directory is empty!</p>
+                                        <p style="line-height: 52px;">This directory is empty!</p>
                                     </td>
                                 </tr>
                                 <!-- <tr>

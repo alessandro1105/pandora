@@ -18,7 +18,7 @@ angular
             
             $http({
                 method: 'GET',
-                url: API_STORAGE_SERVICE + '/' + UserService.user.uuid + '/' + dir
+                url: API_BASE + API_STORAGE_SERVICE + '/' + UserService.user.uuid + '/' + dir
             }).then(function (response) {
                 // Save the data
                 current.name = response.data.name;
@@ -33,7 +33,6 @@ angular
             });
             
             return deferred.promise;
-
         }
 
         // Change the current directory
@@ -42,8 +41,24 @@ angular
         }
 
         // Creare a new directory in the current position
-        function newDirectory() {
+        function newDirectory(dir) {
+            var deferred = $q.defer();
+            
+            $http({
+                method: 'PUT',
+                url: API_BASE + API_STORAGE_SERVICE + '/' + UserService.user.uuid + '/' + current.path + '/' + dir + '?directory=true'
+            }).then(function (response) {
+                deferred.resolve();
 
+                refreshListing(current.path);
+
+            }, function errorCallback(response) {
+                deferred.reject(response);
+
+                console.log('error');
+            });
+            
+            return deferred.promise;
         }
 
         // Upload a file in the current position
@@ -57,7 +72,7 @@ angular
             
             $http({
                 method: 'GET',
-                url: API_STORAGE_SERVICE + '/' + UserService.user.uuid + '/' + file + '?info=true'
+                url: API_BASE + API_STORAGE_SERVICE + '/' + UserService.user.uuid + '/' + file + '?info=true'
             }).then(function (response) {
 
                 deferred.resolve(response.data);
@@ -68,7 +83,27 @@ angular
             });
 
             return deferred.promise;
-        }       
+        }
+
+        // Delete an element
+        function deleteElement(path) {
+            var deferred = $q.defer();
+            
+            $http({
+                method: 'DELETE',
+                url: API_BASE + API_STORAGE_SERVICE + '/' + UserService.user.uuid + path
+            }).then(function () {
+                
+                deferred.resolve();
+                refreshListing(current.path);
+
+            }, function errorCallback(response) {
+
+                deferred.reject(response);
+            });
+
+            return deferred.promise;
+        }
 
         // Return the service object
         return {
@@ -76,6 +111,7 @@ angular
             newDirectory: newDirectory,
             uploadFile: uploadFile,
             getVersions: getVersions,
+            deleteElement: deleteElement,
             get listing() {
                 return listing;
             },
@@ -83,7 +119,7 @@ angular
                 return current;
             },
             get downloadBaseUrl() {
-                return API_STORAGE_SERVICE + '/' + UserService.user.uuid;
+                return API_BASE +  API_STORAGE_SERVICE + '/' + UserService.user.uuid;
             }
         }
 
