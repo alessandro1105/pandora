@@ -10,6 +10,7 @@ angular
         'error404', // Error 404 Module
         'user', // User Module
         'storage', // Storage Module
+        'file', // File module
 
         // Commons
         'loading-spinner', // Loading Spinner Module

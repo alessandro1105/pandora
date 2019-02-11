@@ -1,7 +1,7 @@
 angular
     .module('storage')
 
-    .factory('StorageService', function ($q, $http, UserService, API_BASE, API_STORAGE_SERVICE) {
+    .factory('StorageService', function ($q, $http, UserService, AlertService, API_BASE, API_STORAGE_SERVICE) {
         
         // Current listing
         var listing = [];
@@ -62,8 +62,18 @@ angular
         }
 
         // Upload a file in the current position
-        function uploadFile() {
+        function uploadFile(file, content) {            
+            $http({
+                method: 'PUT',
+                url: API_BASE + API_STORAGE_SERVICE + '/' + UserService.user.uuid + current.path + '/' + file.name,
+                data: content
+            }).then(function () {
 
+                refreshListing(current.path);
+
+                AlertService.info('File successfully updated')
+
+            }, function errorCallback() { });
         }
 
         // Get all versions of a file
@@ -93,7 +103,7 @@ angular
                 method: 'DELETE',
                 url: API_BASE + API_STORAGE_SERVICE + '/' + UserService.user.uuid + path
             }).then(function () {
-                
+
                 deferred.resolve();
                 refreshListing(current.path);
 

@@ -110,8 +110,9 @@ angular
                 current += pathSplitted[i] + '/'
                 currentPath.push({
                     name: pathSplitted[i],
+                    path: current,
                     fn: function () {
-                        vm.changeDirectory(current)
+                        vm.changeDirectory(this.path)
                     }
                 });
             }

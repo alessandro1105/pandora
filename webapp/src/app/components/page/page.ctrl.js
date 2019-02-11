@@ -54,8 +54,7 @@ angular
                     });
                     
             }, function () { } );
-          };
-    
+        };
     })
 
     .controller('newDirectoryModalCtrl', function ($uibModalInstance) {
